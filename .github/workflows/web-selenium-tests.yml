@@ -1,4 +1,4 @@
-name: Web Selenium E2E Tests
+name: SyncTune Web CI Pipeline
 
 on:
   push:
@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  selenium-tests:
-    name: Selenium Web E2E Test Suite
+  test:
+    name: Build and Run E2E Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -73,3 +73,43 @@ jobs:
           path: |
             tests/selenium/selenium-report.xlsx
             tests/selenium/screenshots/
+          retention-days: 7
+
+      - name: Build Web App
+        run: |
+          cd frontend/capacitor-app
+          npm run build
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build
+          path: frontend/capacitor-app/dist/
+          retention-days: 1
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build
+          path: dist
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

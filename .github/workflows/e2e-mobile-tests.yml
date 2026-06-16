@@ -1,4 +1,4 @@
-name: Mobile E2E Tests
+name: SyncTune Android E2E Appium Tests
 
 on:
   push:
@@ -31,6 +31,12 @@ jobs:
             backend/node-api/package.json
             tests/package.json
 
+      - name: Build Android Debug APK
+        run: |
+          cd frontend/expo-app/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
       - name: Install Global Appium & Drivers
         run: |
           npm install -g appium
@@ -62,8 +68,11 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            # Check connected devices
-            adb devices
+            # Wait for emulator to boot up
+            adb wait-for-device
+            
+            # Install the built debug APK
+            adb install frontend/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
             
             # Start Appium server in the background
             appium --allow-insecure=uiautomator2:chromedriver_autodownload &
@@ -83,3 +92,4 @@ jobs:
           path: |
             tests/mobile-tests/reports/
             tests/mobile-tests/screenshots/
+          retention-days: 7

@@ -1,4 +1,4 @@
-name: Backend Security Vulnerability Scan
+name: SyncTune Security Vulnerability Scan
 
 on:
   push:
@@ -41,3 +41,4 @@ jobs:
         with:
           name: backend-security-compliance-report
           path: tests/reports/backend_vulnerability_report_*.xlsx
+          retention-days: 7
