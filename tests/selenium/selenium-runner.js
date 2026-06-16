@@ -124,6 +124,11 @@ async function runMasterTestSuite() {
         await driver.quit();
       } catch (e) {}
     }
+
+    if (failed > 0) {
+      console.error(`❌ E2E suite failed with ${failed} test failures.`);
+      process.exit(1);
+    }
   }
 }
 
