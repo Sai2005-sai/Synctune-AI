@@ -18,18 +18,34 @@ jobs:
         with:
           clean: false
 
-      - name: Start Local Backend API Server
+      - name: Start Servers (Backend & Appium)
         shell: powershell
         run: |
+          # Prevent runner from killing background processes when this step completes
+          $env:RUNNER_TRACKING_ID=""
+          
+          # Start Node API Backend
+          Write-Host "Starting local backend API server..."
           cd backend/node-api
           npm install
           Start-Process -FilePath "node" -ArgumentList "server.js" -NoNewWindow
+          cd ../..
+          
+          # Start Appium Server
+          Write-Host "Starting Appium server..."
+          Start-Process -FilePath "npx.cmd" -ArgumentList "appium", "--allow-insecure=uiautomator2:chromedriver_autodownload" -NoNewWindow
+          
+          # Allow some time for servers to boot up
+          Start-Sleep -Seconds 12
 
-      - name: Start Appium Server
+      - name: Verify Servers are Reachable
         shell: powershell
         run: |
-          Start-Process -FilePath "npx.cmd" -ArgumentList "appium", "--allow-insecure=uiautomator2:chromedriver_autodownload" -NoNewWindow
-          Start-Sleep -Seconds 5
+          Write-Host "Checking port 5000 (Backend)..."
+          Test-NetConnection -Port 5000 -ComputerName localhost
+          
+          Write-Host "Checking port 4723 (Appium)..."
+          Test-NetConnection -Port 4723 -ComputerName localhost
 
       - name: Run Appium Mobile Tests
         shell: powershell
