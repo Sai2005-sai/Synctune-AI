@@ -365,6 +365,9 @@ const AppContent = () => {
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/help" element={<ProtectedRoute><HelpFAQ /></ProtectedRoute>} />
         <Route path="/about" element={<ProtectedRoute><AboutApp /></ProtectedRoute>} />
+        
+        {/* Wildcard Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );
