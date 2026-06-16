@@ -21,6 +21,20 @@ export default function ExportProcessing() {
         const isLongVideo = (video?.duration ?? 0) > 300;
         const selectedTrack = matchedTracks.find(t => t.id === selectedTrackId) ?? matchedTracks[0];
 
+        const resolveUri = (url: string): string => {
+          if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+            return url;
+          }
+          const baseUrl = import.meta.env.BASE_URL || '/';
+          const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+          const cleanUri = url.startsWith('/') ? url.slice(1) : url;
+          const baseSubfolderName = cleanBase.replace(/^\/|\/$/g, '');
+          if (baseSubfolderName && cleanUri.startsWith(baseSubfolderName)) {
+            return '/' + cleanUri;
+          }
+          return cleanBase + cleanUri;
+        };
+
         const opts: any = {
           videoUri: video.url,
           videoDuration: video.duration || 0,
@@ -32,13 +46,13 @@ export default function ExportProcessing() {
 
         if (isLongVideo && segmentAssignments.length > 0) {
            opts.segments = segmentAssignments.map(a => ({
-             trackUri: a.track.asset as string,
+             trackUri: resolveUri(a.track.asset as string),
              start: a.segment.startTime,
              end: a.segment.endTime,
              offset: a.audioStartTime
            }));
         } else if (selectedTrack) {
-           opts.audioUri = selectedTrack.asset as string;
+           opts.audioUri = resolveUri(selectedTrack.asset as string);
            if (segmentAssignments.length > 0) {
              opts.audioOffset = segmentAssignments[0].audioStartTime;
            }
