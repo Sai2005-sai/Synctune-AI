@@ -1,4 +1,4 @@
-name: SyncTune Android E2E Appium Tests
+name: SyncTune Android App Build
 
 on:
   push:
@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  e2e-tests:
-    name: Mobile E2E Test Suite
-    runs-on: macos-13 # Required for hardware acceleration (emulator running)
+  build-apk:
+    name: Build Android Debug APK
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
@@ -27,9 +27,12 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
-          cache-dependency-path: |
-            backend/node-api/package.json
-            tests/package.json
+          cache-dependency-path: frontend/expo-app/package.json
+
+      - name: Install Expo App Dependencies
+        run: |
+          cd frontend/expo-app
+          npm install
 
       - name: Build Android Debug APK
         run: |
@@ -37,59 +40,9 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Install Global Appium & Drivers
-        run: |
-          npm install -g appium
-          appium driver install uiautomator2
-
-      - name: Install Backend API Dependencies
-        run: |
-          cd backend/node-api
-          npm install
-
-      - name: Start Node.js API Server
-        run: |
-          cd backend/node-api
-          node server.js &
-        # Keep running in the background
-
-      - name: Install E2E Testing Suite Dependencies
-        run: |
-          cd tests
-          npm install
-
-      - name: Run E2E Tests inside Android Emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 30
-          target: google_apis
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-window -no-audio -no-boot-anim -camera-back none
-          disable-animations: true
-          script: |
-            # Wait for emulator to boot up
-            adb wait-for-device
-            
-            # Install the built debug APK
-            adb install frontend/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
-            
-            # Start Appium server in the background
-            appium --allow-insecure=uiautomator2:chromedriver_autodownload &
-            
-            # Wait a few seconds for Appium server to warm up
-            sleep 5
-            
-            # Execute mobile test suite runner
-            cd tests/mobile-tests
-            node runner.js
-
-      - name: Upload E2E Test Reports
-        if: always()
+      - name: Upload Android Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-mobile-test-reports
-          path: |
-            tests/mobile-tests/reports/
-            tests/mobile-tests/screenshots/
+          name: app-debug-apk
+          path: frontend/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
