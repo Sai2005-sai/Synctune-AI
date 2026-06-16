@@ -34,8 +34,23 @@ export default function Register() {
       login(email, name);
       navigate('/home');
     } catch (err) {
-      console.error(err);
-      alert('Network error - Is the backend running?');
+      console.error('Backend connection failed:', err);
+      // Fallback for local demo mode on GitHub Pages
+      console.log('Backend offline — registering user in local database...');
+      const registeredUsersStr = localStorage.getItem('synctune_registered_users') || '[]';
+      const users = JSON.parse(registeredUsersStr);
+      
+      if (users.some((u: any) => u.email === email)) {
+        alert('Email already exists in local demo database!');
+        navigate('/sign-in');
+        return;
+      }
+      
+      users.push({ name, email, password });
+      localStorage.setItem('synctune_registered_users', JSON.stringify(users));
+      localStorage.setItem('synctune_token', 'local_demo_token_' + Date.now());
+      login(email, name);
+      navigate('/home');
     }
   };
   // Simple password strength
