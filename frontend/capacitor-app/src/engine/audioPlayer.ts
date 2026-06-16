@@ -65,6 +65,22 @@ class WebAudioPlayer implements IAudioPlayer {
 
   async play(uri: string, offsetSec = 0, initialVolume = 1.0): Promise<void> {
     await this.stop();
+    
+    // Resolve URI relative to Vite base path (e.g. /Synctune-AI/ for GitHub Pages)
+    const resolvedUri = (function resolveUri(url: string): string {
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+        return url;
+      }
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+      const cleanUri = url.startsWith('/') ? url.slice(1) : url;
+      const baseSubfolderName = cleanBase.replace(/^\/|\/$/g, '');
+      if (baseSubfolderName && cleanUri.startsWith(baseSubfolderName)) {
+        return '/' + cleanUri;
+      }
+      return cleanBase + cleanUri;
+    })(uri);
+
     this._uri = uri;
     this._offsetSec = offsetSec;
     
@@ -74,15 +90,15 @@ class WebAudioPlayer implements IAudioPlayer {
     }
 
     // Load and decode buffer (with caching so crossfades are instant)
-    let buffer = audioBufferCache.get(uri);
+    let buffer = audioBufferCache.get(resolvedUri);
     if (!buffer) {
       try {
-        const resp = await fetch(uri);
+        const resp = await fetch(resolvedUri);
         const arrayBuf = await resp.arrayBuffer();
         buffer = await ctx.decodeAudioData(arrayBuf);
-        audioBufferCache.set(uri, buffer);
+        audioBufferCache.set(resolvedUri, buffer);
       } catch (err) {
-        console.warn('[WebAudioPlayer] fetch/decode failed for URI:', uri, err);
+        console.warn('[WebAudioPlayer] fetch/decode failed for URI:', resolvedUri, err);
         throw err;
       }
     }
