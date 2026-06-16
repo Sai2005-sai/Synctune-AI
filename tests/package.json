@@ -1,0 +1,26 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test:selenium": "node selenium/selenium-runner.js",
+    "test:appium": "node appium/appium-runner.js",
+    "test:all": "npm run test:selenium && npm run test:appium"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@wdio/appium-service": "^9.28.0",
+    "appium": "^3.5.0",
+    "chai": "^6.2.2",
+    "chromedriver": "^149.0.2",
+    "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
+    "mocha": "^11.7.6",
+    "selenium-webdriver": "^4.44.0",
+    "webdriverio": "^9.28.0"
+  }
+}

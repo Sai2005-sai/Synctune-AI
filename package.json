@@ -1,0 +1,12 @@
+{
+  "name": "synctune-root",
+  "version": "1.0.0",
+  "scripts": {
+    "test:selenium": "node tests/selenium/selenium-runner.js",
+    "test:appium": "node tests/appium/appium-runner.js"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "webdriverio": "^8.39.0"
+  }
+}

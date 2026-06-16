@@ -1,0 +1,43 @@
+name: Backend Security Vulnerability Scan
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run weekly on Sundays
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  security-audit:
+    name: Live Security Audit (OSV API)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: tests/package.json
+
+      - name: Install Testing & Auditing Dependencies
+        run: |
+          cd tests
+          npm install
+
+      - name: Run Live Compliance Audit
+        run: |
+          node tests/run-vulnerability-scan.js
+
+      - name: Upload Security Audit Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-security-compliance-report
+          path: tests/reports/backend_vulnerability_report_*.xlsx

@@ -1,0 +1,75 @@
+name: Web Selenium E2E Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  selenium-tests:
+    name: Selenium Web E2E Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/node-api/package.json
+            frontend/capacitor-app/package.json
+            tests/package.json
+
+      - name: Install Backend Dependencies & Start Server
+        run: |
+          cd backend/node-api
+          npm install
+          node server.js &
+          # Keep running in background
+
+      - name: Install Frontend Dependencies & Start Dev Server
+        run: |
+          cd frontend/capacitor-app
+          npm install
+          npm run dev &
+          # Keep running in background
+
+      - name: Install Testing Suite Dependencies
+        run: |
+          cd tests
+          npm install
+
+      - name: Wait for Frontend & Backend services
+        run: |
+          # Wait for backend (port 5000)
+          until curl -s http://localhost:5000 > /dev/null; do
+            echo "Waiting for backend on port 5000..."
+            sleep 2
+          done
+          echo "Backend is up!"
+          
+          # Wait for Vite dev server (port 5173)
+          until curl -s http://localhost:5173 > /dev/null; do
+            echo "Waiting for frontend on port 5173..."
+            sleep 2
+          done
+          echo "Frontend Vite server is up!"
+
+      - name: Run Selenium E2E Master Suite
+        run: |
+          node tests/selenium/selenium-runner.js
+
+      - name: Upload Selenium Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selenium-web-test-reports
+          path: |
+            tests/selenium/selenium-report.xlsx
+            tests/selenium/screenshots/

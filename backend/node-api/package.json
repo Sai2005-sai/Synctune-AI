@@ -1,0 +1,23 @@
+{
+  "name": "synctune-backend",
+  "version": "1.0.0",
+  "description": "Backend database server for SyncTune AI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.1",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.22.5",
+    "pg": "^8.21.0",
+    "sqlite3": "^6.0.1"
+  },
+  "overrides": {
+    "tar": "7.5.16"
+  }
+}

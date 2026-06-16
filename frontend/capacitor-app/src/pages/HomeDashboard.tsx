@@ -1,0 +1,168 @@
+import React, { Component } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  MobileLayout,
+  GlassCard,
+  MoodChip } from
+'../components/SharedComponents';
+import { Bell, Plus, Play, MoreVertical } from 'lucide-react';
+export default function HomeDashboard() {
+  const navigate = useNavigate();
+  const recentProjects = [
+  {
+    id: 1,
+    name: 'Summer Vlog 2023',
+    date: '2 days ago',
+    mood: 'Happy',
+    status: 'Completed',
+    duration: '2:45',
+    img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=500&auto=format&fit=crop'
+  },
+  {
+    id: 2,
+    name: 'Cinematic Drone',
+    date: '5 days ago',
+    mood: 'Cinematic',
+    status: 'Completed',
+    duration: '1:12',
+    img: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=500&auto=format&fit=crop'
+  },
+  {
+    id: 3,
+    name: 'Workout Routine',
+    date: '1 week ago',
+    mood: 'Energetic',
+    status: 'Draft',
+    duration: '0:45',
+    img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=500&auto=format&fit=crop'
+  }];
+
+  return (
+    <MobileLayout className="px-6 pt-12 pb-24">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-white tracking-tight">
+            SyncTune{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-purple to-accent-cyan">
+              AI
+            </span>
+          </h1>
+          <p className="text-text-secondary text-sm">Welcome back, Alex</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center relative">
+            <Bell size={18} className="text-white" />
+            <span className="absolute top-2 right-2.5 w-2 h-2 bg-status-error rounded-full border border-dark-bg" />
+          </button>
+          <div className="w-10 h-10 rounded-full bg-gradient-accent p-[2px]">
+            <img
+              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop"
+              alt="Profile"
+              className="w-full h-full rounded-full border-2 border-dark-bg object-cover" />
+            
+          </div>
+        </div>
+      </div>
+
+      {/* Create New Project */}
+      <motion.div
+        whileTap={{
+          scale: 0.98
+        }}
+        onClick={() => navigate('/upload')}
+        className="relative w-full h-40 rounded-3xl overflow-hidden mb-10 cursor-pointer group shadow-lg">
+        
+        <div className="absolute inset-0 bg-gradient-accent opacity-80 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-40" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-10">
+          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <Plus size={28} />
+          </div>
+          <h2 className="font-display font-bold text-lg">Create New Project</h2>
+        </div>
+      </motion.div>
+
+      {/* Recent Projects */}
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-display font-bold text-lg text-white">
+            Recent Projects
+          </h3>
+          <button
+            onClick={() => navigate('/projects')}
+            className="text-accent-cyan text-sm font-medium">
+            
+            See All
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {recentProjects.map((project, i) =>
+          <motion.div
+            key={project.id}
+            initial={{
+              opacity: 0,
+              y: 20
+            }}
+            animate={{
+              opacity: 1,
+              y: 0
+            }}
+            transition={{
+              delay: i * 0.1
+            }}>
+            
+              <GlassCard
+              className="flex gap-4 p-3"
+              onClick={() => navigate('/preview')}>
+              
+                <div className="relative w-24 h-24 rounded-xl overflow-hidden shrink-0">
+                  <img
+                  src={project.img}
+                  alt={project.name}
+                  className="w-full h-full object-cover" />
+                
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Play size={14} className="text-white ml-0.5" />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-medium text-white">
+                    {project.duration}
+                  </div>
+                </div>
+
+                <div className="flex-1 py-1 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium text-white text-sm line-clamp-1">
+                        {project.name}
+                      </h4>
+                      <p className="text-text-secondary text-xs mt-0.5">
+                        {project.date}
+                      </p>
+                    </div>
+                    <button className="text-text-secondary hover:text-white p-1">
+                      <MoreVertical size={16} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-2">
+                    <MoodChip mood={project.mood} />
+                    <span
+                    className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${project.status === 'Completed' ? 'bg-status-success/20 text-status-success' : 'bg-white/10 text-text-secondary'}`}>
+                    
+                      {project.status}
+                    </span>
+                  </div>
+                </div>
+              </GlassCard>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </MobileLayout>);
+
+}

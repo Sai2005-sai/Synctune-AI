@@ -1,0 +1,323 @@
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import {
+  Animated,
+  Dimensions,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Alert,
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '../theme/colors';
+import VideoPickerCard from '../components/VideoPickerCard';
+import VideoPlayer from '../components/VideoPlayer';
+import AnalyzeButton from '../components/AnalyzeButton';
+import BGMTrackCard from '../components/BGMTrackCard';
+import MoodBadge from '../components/MoodBadge';
+import WaveformVisualizer from '../components/WaveformVisualizer';
+import AnalysisMetricsCard from '../components/AnalysisMetricsCard';
+import SelectedTracksCard from '../components/SelectedTracksCard';
+import { analyzeFrames } from '../engine/frameAnalyzer';
+import { classify } from '../engine/classifier';
+import { buildAnalysisResult, analyzeVideoFallback, VideoAnalysisResult, VideoMetadata } from '../engine/videoAnalyzer';
+import { matchBGM, MatchedTrack } from '../engine/bgmMatcher';
+import { selectTracks } from '../engine/trackSelector';
+import { loadTracksMetadata, loadTrackMetadata, LoadedTrack } from '../engine/musicLoader';
+import { computeSegments } from '../engine/videoSegmenter';
+import { assignTracksToSegments, resetVariationHistory, SegmentAssignment } from '../engine/audioVariationEngine';
+import SegmentTimelineCard from '../components/SegmentTimelineCard';
+import SyncedPreviewPlayer from '../components/SyncedPreviewPlayer';
+import ExportPanel from '../components/ExportPanel';
+
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+type AppState = 'idle' | 'video_selected' | 'prompt_input' | 'analyzing' | 'mood_analysis' | 'music_preview' | 'results';
+
+interface SelectedVideo {
+  uri: string;
+  name: string;
+  size?: number;
+  duration?: number;
+  width?: number;
+  height?: number;
+}
+
+// ── Analysis step messages that appear sequentially ──────────────────────────
+const ANALYSIS_STEPS = [
+  { text: 'Extracting video frames…',            delay: 0    },
+  { text: 'Computing per-frame luminance…',       delay: 1200 },
+  { text: 'Measuring motion intensity…',          delay: 2400 },
+  { text: 'Detecting scene cuts…',                delay: 3500 },
+  { text: 'Classifying mood & energy level…',     delay: 4600 },
+  { text: 'Loading local music library…',         delay: 5600 },
+  { text: 'Selecting & matching tracks…',         delay: 6400 },
+];
+
+interface Props {
+  onSignOut?: () => void;
+}
+
+export default function HomeScreen({ onSignOut }: Props) {
+  const [appState, setAppState]                 = useState<AppState>('idle');
+  const [selectedVideo, setSelectedVideo]       = useState<SelectedVideo | null>(null);
+  const [userPrompt, setUserPrompt]             = useState('');
+  const [analysisResult, setAnalysisResult]     = useState<VideoAnalysisResult | null>(null);
+  const [matchedTracks, setMatchedTracks]       = useState<MatchedTrack[]>([]);
+  const [selectedLocalTracks, setSelectedLocalTracks] = useState<LoadedTrack[]>([]);
+  const [segmentAssignments, setSegmentAssignments]   = useState<SegmentAssignment[]>([]);
+  const [showSyncPreview, setShowSyncPreview]         = useState(false);
+  const [showExportPanel,  setShowExportPanel]         = useState(false);
+  const [analysisError, setAnalysisError]       = useState<string | null>(null);
+
+  // Animations
+  const headerAnim  = useRef(new Animated.Value(0)).current;
+  const contentAnim = useRef(new Animated.Value(0)).current;
+  const resultsAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(headerAnim, { toValue: 1, duration: 700, useNativeDriver: true }).start();
+  }, []);
+
+  useEffect(() => {
+    // contentAnim drives: video_selected, prompt_input, analyzing pages
+    if (appState === 'video_selected' || appState === 'prompt_input' || appState === 'analyzing') {
+      Animated.spring(contentAnim, { toValue: 1, friction: 8, tension: 60, useNativeDriver: true }).start();
+    }
+    // resultsAnim drives: mood_analysis, music_preview pages
+    if (appState === 'mood_analysis' || appState === 'music_preview') {
+      Animated.timing(resultsAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+    }
+    // Reset animations when returning to earlier steps
+    if (appState === 'idle') {
+      contentAnim.setValue(0);
+      resultsAnim.setValue(0);
+    }
+  }, [appState]);
+
+  // ── Video picker ─────────────────────────────────────────────────────────
+  const pickVideo = useCallback(async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permission.granted) {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['videos'],
+          allowsEditing: false,
+          quality: 1,
+        });
+        if (!result.canceled && result.assets[0]) {
+          const asset = result.assets[0];
+          resetForNewVideo({
+            uri: asset.uri,
+            name: asset.fileName ?? asset.uri.split('/').pop() ?? 'video.mp4',
+            size: asset.fileSize,
+            duration: asset.duration ? asset.duration / 1000 : undefined,
+            width: asset.width,
+            height: asset.height,
+          });
+          return;
+        }
+      }
+
+      // Fallback: DocumentPicker
+      const docResult = await DocumentPicker.getDocumentAsync({ type: 'video/*', copyToCacheDirectory: true });
+      if (!docResult.canceled && docResult.assets[0]) {
+        const asset = docResult.assets[0];
+        resetForNewVideo({ uri: asset.uri, name: asset.name, size: asset.size });
+      }
+    } catch (err) {
+      console.warn('Video pick error:', err);
+    }
+  }, []);
+
+  const resetForNewVideo = (video: SelectedVideo) => {
+    contentAnim.setValue(0);
+    resultsAnim.setValue(0);
+    setSelectedVideo(video);
+    setUserPrompt('');
+    setAnalysisResult(null);
+    setMatchedTracks([]);
+    setSelectedLocalTracks([]);
+    setSegmentAssignments([]);
+    setAnalysisError(null);
+    resetVariationHistory();
+    setAppState('video_selected');
+  };
+
+  // Move to prompt page after video selected
+  const handleContinueToPrompt = () => setAppState('prompt_input');
+
+  // ── Manual BGM Selection Override ────────────────────────────────────────
+  const handleSelectBGM = async (track: MatchedTrack) => {
+    try {
+      const loaded = await loadTrackMetadata(track);
+      setSelectedLocalTracks([loaded]);
+
+      const dur = selectedVideo?.duration ?? 60;
+      const singleSegment = {
+        index: 0,
+        startTime: 0,
+        endTime: dur,
+        duration: dur,
+        motionScore: 0.5,
+        label: 'Selected BGM',
+        color: '#6366F1'
+      };
+
+      const assignment: SegmentAssignment = {
+        segment: singleSegment,
+        track: loaded,
+        audioStartTime: 0,
+        audioEndTime: Math.min(loaded.duration, dur),
+        variationIndex: 1,
+        offsetLabel: '▶ from 0:00',
+      };
+
+      setSegmentAssignments([assignment]);
+      
+      // Restart preview block to quickly sync the new timeline
+      setShowSyncPreview(false);
+      setTimeout(() => setShowSyncPreview(true), 50);
+
+    } catch (err) {
+      console.warn('Failed to apply selected BGM:', err);
+    }
+  };
+
+  // ── Real frame analysis ──────────────────────────────────────────────────
+  const handleAnalyze = useCallback(async () => {
+    if (!selectedVideo) return;
+    setAppState('analyzing');
+    setAnalysisError(null);
+
+    try {
+      let durationSec = selectedVideo.duration ?? 60;
+
+      // ① Real frame-level computation (Canvas on web, thumbnail entropy on native)
+      const frameData = await analyzeFrames(selectedVideo.uri, durationSec);
+
+      // Override guessed duration if analyzer extracted the true media duration
+      if (frameData.trueDurationSeconds && frameData.trueDurationSeconds > 0) {
+        durationSec = frameData.trueDurationSeconds;
+        setSelectedVideo(prev => prev ? { ...prev, duration: durationSec } : null);
+      }
+
+      // ② Classify based on brightness, motion intensity, scene cuts
+      const classification = classify(
+        frameData.brightness,
+        frameData.motionIntensity,
+        frameData.sceneCuts,
+        frameData.frameCount,
+      );
+
+      // ③ Build the full result (combines frame metrics + metadata heuristics)
+      const meta: VideoMetadata = {
+        uri: selectedVideo.uri,
+        name: selectedVideo.name,
+        size: selectedVideo.size,
+        duration: durationSec,
+        width: selectedVideo.width,
+        height: selectedVideo.height,
+      };
+      const analysis = buildAnalysisResult(meta, frameData, classification);
+
+      // ④ Determine which tracks to use for primary audio generation.
+      //    If the user gave a prompt → use the top prompt-matched tracks (strict adherence).
+      //    Otherwise → fall back to the visual-AI-driven selectTracks().
+      const allMatched = matchBGM(analysis, userPrompt, 8);
+      const pickedTracks = (userPrompt && userPrompt.trim().length > 0)
+        ? allMatched.slice(0, 3)          // top 3 prompt-matched tracks drive the audio
+        : selectTracks(classification.mood, classification.energy);
+
+      const loadedTracks  = await loadTracksMetadata(pickedTracks);
+
+      // ⑤ Compute video segments from scene-cut data + assign audio variations
+      const segments      = computeSegments(durationSec, frameData);
+      const assignments   = assignTracksToSegments(segments, loadedTracks, durationSec);
+
+      // ⑥ matchBGM already computed above — reuse for the recommended BGM list
+      const tracks = allMatched;
+
+      setAnalysisResult(analysis);
+      setSelectedLocalTracks(loadedTracks);
+      setSegmentAssignments(assignments);
+      setMatchedTracks(tracks);
+      resultsAnim.setValue(0);
+      setAppState('mood_analysis');
+    } catch (err: any) {
+      console.warn('Analysis error:', err);
+      // Graceful fallback — metadata-only heuristic
+      const meta: VideoMetadata = {
+        uri: selectedVideo.uri,
+        name: selectedVideo.name,
+        size: selectedVideo.size,
+        duration: selectedVideo.duration,
+        width: selectedVideo.width,
+        height: selectedVideo.height,
+      };
+      const fallback = analyzeVideoFallback(meta);
+      // Still load local tracks with fallback mood
+      try {
+        const fallbackPicked = selectTracks(fallback.classifiedMood, fallback.energyLevel);
+        const fallbackLoaded = await loadTracksMetadata(fallbackPicked);
+        setSelectedLocalTracks(fallbackLoaded);
+      } catch { /* ignore */ }
+      const tracks = matchBGM(fallback, userPrompt, 8);
+      setAnalysisResult(fallback);
+      setMatchedTracks(tracks);
+      setAnalysisError('Frame analysis failed — using metadata fallback.');
+      resultsAnim.setValue(0);
+      setAppState('mood_analysis');
+    }
+  }, [selectedVideo, userPrompt]);
+
+  const handleReset = () => {
+    setAppState('idle');
+    setSelectedVideo(null);
+    setAnalysisResult(null);
+    setMatchedTracks([]);
+    setSelectedLocalTracks([]);
+    setSegmentAssignments([]);
+    setAnalysisError(null);
+    resetVariationHistory();
+    contentAnim.setValue(0);
+    resultsAnim.setValue(0);
+  };
+
+  const handleBack = () => {
+    if (appState === 'music_preview') {
+      resultsAnim.setValue(0);
+      setAppState('mood_analysis');
+    } else if (appState === 'mood_analysis') {
+      resultsAnim.setValue(0);
+      setAppState('prompt_input');
+    } else if (appState === 'prompt_input') {
+      contentAnim.setValue(0);
+      setAppState('video_selected');
+    } else if (appState === 'video_selected' || appState === 'analyzing') {
+      handleReset();
+    }
+  };
+
+  // ── Energy level badge helper ────────────────────────────────────────────
+  const EnergyBadge = ({ level }: { level: 'low' | 'medium' | 'high' }) => {
+    const cfg = {
+      low:    { color: Colors.moodPeaceful, label: 'Low Energy',    bg: 'rgba(16,185,129,0.15)', icon: 'moon-outline' },
+      medium: { color: Colors.accent,        label: 'Medium Energy',  bg: 'rgba(245,158,11,0.15)', icon: 'sunny-outline' },
+      high:   { color: Colors.moodEnergetic, label: 'High Energy',    bg: 'rgba(245,158,11,0.15)', icon: 'flash-outline' },
+    }[level];
+    return (
+      <View style={[hsStyles.energyBadge, { backgroundColor: cfg.bg, borderColor: cfg.color }]}>
+        <Ionicons name={cfg.icon as any} size={14} color={cfg.color} style={{ marginRight: 5 }} />
+        <Text style={[hsStyles.energyBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+      </View>
+    );
+  };

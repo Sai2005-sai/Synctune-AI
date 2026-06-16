@@ -1,0 +1,15 @@
+{
+  "name": "synctune-mobile-tests",
+  "version": "1.0.0",
+  "description": "SyncTune AI — End-to-End Appium Mobile Test Suite for Motorola Edge 50 Fusion",
+  "main": "runner.js",
+  "scripts": {
+    "test": "node runner.js",
+    "test:suite1": "node runner.js --suite 1",
+    "test:suite2": "node runner.js --suite 2"
+  },
+  "dependencies": {
+    "webdriverio": "^8.36.1",
+    "exceljs": "^4.4.0"
+  }
+}

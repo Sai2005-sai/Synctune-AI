@@ -1,0 +1,48 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+web_concurrent_packages/
+
+# Python caching & envs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Build & compiled directories
+dist/
+build/
+.expo/
+.next/
+out/
+bin/
+obj/
+
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Generated E2E and Vulnerability reports
+*.xlsx
+*.zip
+*.mp4
+tests/reports/
+tests/mobile-tests/reports/
+tests/mobile-tests/screenshots/
+tests/selenium/screenshots/
