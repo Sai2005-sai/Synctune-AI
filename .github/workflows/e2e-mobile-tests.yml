@@ -21,6 +21,11 @@ jobs:
           cd frontend/expo-app
           npm install
 
+      - name: Prebuild Android Native Directory
+        run: |
+          cd frontend/expo-app
+          npx expo prebuild --platform android --no-install
+
       - name: Run Android Instrumented Tests
         run: |
           cd frontend/expo-app/android
