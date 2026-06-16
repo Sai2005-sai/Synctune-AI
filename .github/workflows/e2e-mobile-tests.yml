@@ -31,14 +31,14 @@ jobs:
           $backendDir = (Resolve-Path "backend/node-api").Path
           $appiumDir = (Resolve-Path ".").Path
           
-          # Start Node API Backend using WMI to escape Job Object
+          # Start Node API Backend using WMI
           Write-Host "Starting local backend API server via WMI..."
           Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
             CommandLine = "node server.js"
             CurrentDirectory = $backendDir
           }
           
-          # Start Appium Server using WMI to escape Job Object
+          # Start Appium Server using WMI
           Write-Host "Starting Appium server via WMI..."
           Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
             CommandLine = "npx.cmd appium --allow-insecure=uiautomator2:chromedriver_autodownload"
@@ -64,6 +64,28 @@ jobs:
             throw "Appium on port 4723 is not reachable!"
           }
           Write-Host "✅ Appium is online!"
+
+      - name: Build and Install Capacitor Android App
+        shell: powershell
+        run: |
+          # Build Web Assets
+          Write-Host "Building Capacitor Web assets..."
+          cd frontend/capacitor-app
+          npm install
+          npm run build
+          
+          # Sync to Android
+          Write-Host "Syncing to Android project..."
+          npx cap sync android
+          
+          # Compile APK
+          Write-Host "Compiling APK..."
+          cd android
+          .\gradlew.bat assembleDebug
+          
+          # Reinstall on connected physical device
+          Write-Host "Reinstalling latest APK on connected phone..."
+          adb install -r app/build/outputs/apk/debug/app-debug.apk
 
       - name: Run Appium Mobile Tests
         shell: powershell
