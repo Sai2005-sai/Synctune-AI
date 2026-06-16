@@ -78,6 +78,7 @@ jobs:
           Write-Host "Building Capacitor Web assets..."
           cd frontend/capacitor-app
           npm install
+          $env:VITE_CAPACITOR="true"
           npm run build
           
           # Sync to Android
