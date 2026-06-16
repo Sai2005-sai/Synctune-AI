@@ -28,7 +28,7 @@ jobs:
       - name: Start Appium Server
         shell: powershell
         run: |
-          Start-Process -FilePath "npx" -ArgumentList "appium", "--allow-insecure=uiautomator2:chromedriver_autodownload" -NoNewWindow
+          Start-Process -FilePath "npx.cmd" -ArgumentList "appium", "--allow-insecure=uiautomator2:chromedriver_autodownload" -NoNewWindow
           Start-Sleep -Seconds 5
 
       - name: Run Appium Mobile Tests
