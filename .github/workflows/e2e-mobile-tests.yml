@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Build & Test on Physical Device
+    name: Run Appium E2E Tests on Physical Device
     runs-on: self-hosted
 
     steps:
@@ -18,27 +18,30 @@ jobs:
         with:
           clean: false
 
-      - name: Install Expo App Dependencies
+      - name: Start Local Backend API Server
+        shell: pwsh
         run: |
-          cd frontend/expo-app
+          cd backend/node-api
           npm install
+          Start-Process -FilePath "node" -ArgumentList "server.js" -NoNewWindow
 
-      - name: Prebuild Android Native Directory
+      - name: Start Appium Server
+        shell: pwsh
         run: |
-          cd frontend/expo-app
-          npx expo prebuild --platform android --no-install
+          Start-Process -FilePath "npx" -ArgumentList "appium", "--allow-insecure=uiautomator2:chromedriver_autodownload" -NoNewWindow
+          Start-Sleep -Seconds 5
 
-      - name: Run Android Instrumented Tests
+      - name: Run Appium Mobile Tests
+        shell: pwsh
         run: |
-          cd frontend/expo-app/android
-          .\gradlew.bat connectedAndroidTest
+          cd tests/mobile-tests
+          npm install
+          node runner.js
 
-      - name: Upload Test Results
+      - name: Upload Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: android-test-results
-          path: |
-            frontend/expo-app/android/app/build/reports/androidTests/connected/
-            frontend/expo-app/android/app/build/outputs/androidTest-results/connected/
+          name: mobile-test-reports
+          path: tests/mobile-tests/reports/
           retention-days: 7
