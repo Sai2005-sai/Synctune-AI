@@ -4,7 +4,7 @@ const fs = require('fs');
 
 async function generateReport(results) {
   const workbook = new ExcelJS.Workbook();
-  const reportPath = path.join('D:', 'PDD new', 'tests', 'selenium', 'selenium-report.xlsx');
+  const reportPath = path.join(__dirname, 'selenium-report.xlsx');
 
   // Ensure output directory exists
   const outputDir = path.dirname(reportPath);

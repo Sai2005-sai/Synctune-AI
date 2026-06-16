@@ -6,7 +6,7 @@ const fs = require('fs');
 
 async function runTests(driver, logger) {
   const suite = 'New Project & Upload';
-  const targetFolder = path.join('D:', 'PDD new', 'tests', 'selenium', 'test-assets');
+  const targetFolder = path.join(__dirname, '..', 'test-assets');
   const targetVideo = path.join(targetFolder, 'test_video.mp4');
 
   // Ensure target folder exists
@@ -66,14 +66,14 @@ async function runTests(driver, logger) {
     const start = Date.now();
     
     // 1. Check user specified video first
-    const requestedVideo = path.join('D:', 'PDD new', 'aivideobgm', 'test videos', 'Cinematic Trailer Background Music  1 minute Action Teaser Music [Free] - Broken C Music  No Copyright (1080p, h264).mp4');
+    const requestedVideo = path.join(__dirname, '..', '..', '..', 'frontend', 'expo-app', 'test videos', 'Cinematic Trailer Background Music  1 minute Action Teaser Music [Free] - Broken C Music  No Copyright (1080p, h264).mp4');
     
     if (fs.existsSync(requestedVideo)) {
       console.log('    🎥 Copying requested user video to test-assets...');
       fs.copyFileSync(requestedVideo, targetVideo);
     } else {
       // 2. Check for any other fallback MP4 in source folder
-      const sourceDir = path.join('D:', 'PDD new', 'aivideobgm', 'test videos');
+      const sourceDir = path.join(__dirname, '..', '..', '..', 'frontend', 'expo-app', 'test videos');
       if (fs.existsSync(sourceDir)) {
         const files = fs.readdirSync(sourceDir);
         const mp4File = files.find(f => f.toLowerCase().endsWith('.mp4'));

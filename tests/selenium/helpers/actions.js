@@ -35,7 +35,7 @@ async function waitForURL(driver, urlPart, timeout = 15000) {
 
 async function takeScreenshot(driver, testName) {
   try {
-    const screenshotDir = path.join('D:', 'PDD new', 'tests', 'selenium', 'screenshots');
+    const screenshotDir = path.join(__dirname, '..', 'screenshots');
     if (!fs.existsSync(screenshotDir)) {
       fs.mkdirSync(screenshotDir, { recursive: true });
     }
