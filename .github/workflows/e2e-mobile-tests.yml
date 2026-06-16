@@ -19,20 +19,20 @@ jobs:
           clean: false
 
       - name: Start Local Backend API Server
-        shell: pwsh
+        shell: powershell
         run: |
           cd backend/node-api
           npm install
           Start-Process -FilePath "node" -ArgumentList "server.js" -NoNewWindow
 
       - name: Start Appium Server
-        shell: pwsh
+        shell: powershell
         run: |
           Start-Process -FilePath "npx" -ArgumentList "appium", "--allow-insecure=uiautomator2:chromedriver_autodownload" -NoNewWindow
           Start-Sleep -Seconds 5
 
       - name: Run Appium Mobile Tests
-        shell: pwsh
+        shell: powershell
         run: |
           cd tests/mobile-tests
           npm install
