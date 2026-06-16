@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import emailjs from '@emailjs/browser';
+import { API_URL } from '../config';
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export default function SignIn() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/auth/login', {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -52,22 +53,8 @@ export default function SignIn() {
       login(data.user.email, data.user.name);
       navigate('/home');
     } catch (err) {
-      console.error('Backend connection failed:', err);
-      // Fallback for GitHub Pages demo mode
-      const registeredUsersStr = localStorage.getItem('synctune_registered_users');
-      if (registeredUsersStr) {
-        const users = JSON.parse(registeredUsersStr);
-        const matchedUser = users.find((u: any) => u.email === email && u.password === password);
-        if (matchedUser) {
-          localStorage.setItem('synctune_token', 'local_demo_token_' + Date.now());
-          login(matchedUser.email, matchedUser.name);
-          navigate('/home');
-          return;
-        }
-      }
-      if (window.confirm('Account not found in local demo database! Would you like to register?')) {
-        navigate('/register');
-      }
+      console.error(err);
+      alert('Network error - Is the backend running?');
     }
   };
 
@@ -84,11 +71,12 @@ export default function SignIn() {
 
   const registerOAuthUser = async (email: string, name: string, provider: string, photo?: string) => {
     try {
-      await fetch('http://127.0.0.1:5000/api/auth/register', {
+      await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, auth_provider: provider, photo })
       });
+      // We don't block login on error, because if it's "Email already exists", it just means they are a returning OAuth user.
     } catch (e) {
       console.error(e);
     }
@@ -127,7 +115,7 @@ export default function SignIn() {
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/auth/check-user', {
+      const response = await fetch(`${API_URL}/api/auth/check-user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail })
@@ -139,11 +127,14 @@ export default function SignIn() {
       }
       
       const userData = await response.json();
+      
+      // Generate a real 4-digit random OTP
       const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
       setGeneratedOtp(otpCode);
-      (window as any).generatedOtp = otpCode;
+      (window as any).generatedOtp = otpCode; // Expose to window for Selenium testing
       
       try {
+        // Replace these with your actual EmailJS credentials
         const EMAILJS_SERVICE_ID = "service_jehqf1q";
         const EMAILJS_TEMPLATE_ID = "template_phl80e7";
         const EMAILJS_PUBLIC_KEY = "PSjw0Qim_VvXUfAMD";
@@ -163,25 +154,13 @@ export default function SignIn() {
         setOtpSent(true);
       } catch (err: any) {
         console.error("Failed to send email:", err);
+        // Fallback for offline testing or limit issues: expose it clearly
         alert(`OTP code is: ${otpCode} (EmailJS error fallback)`);
         setOtpSent(true);
       }
     } catch (err) {
-      console.error('Backend connection failed:', err);
-      // Fallback for local storage database
-      const registeredUsersStr = localStorage.getItem('synctune_registered_users');
-      if (registeredUsersStr) {
-        const users = JSON.parse(registeredUsersStr);
-        const matchedUser = users.find((u: any) => u.email === forgotEmail);
-        if (matchedUser) {
-          const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
-          setGeneratedOtp(otpCode);
-          alert(`[Demo Mode] OTP code is: ${otpCode}`);
-          setOtpSent(true);
-          return;
-        }
-      }
-      alert('Email not found in local demo database!');
+      console.error(err);
+      alert('Network error - Is the backend running?');
     }
   };
 
@@ -193,7 +172,7 @@ export default function SignIn() {
     }
     
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/auth/reset-password', {
+      const response = await fetch(`${API_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail, newPassword })
@@ -212,25 +191,8 @@ export default function SignIn() {
       setNewPassword('');
       setGeneratedOtp('');
     } catch (err) {
-      console.error('Backend connection failed:', err);
-      // Fallback to local storage update
-      const registeredUsersStr = localStorage.getItem('synctune_registered_users');
-      if (registeredUsersStr) {
-        let users = JSON.parse(registeredUsersStr);
-        users = users.map((u: any) => {
-          if (u.email === forgotEmail) {
-            return { ...u, password: newPassword };
-          }
-          return u;
-        });
-        localStorage.setItem('synctune_registered_users', JSON.stringify(users));
-        alert('[Demo Mode] Password reset successfully! Please sign in.');
-        setShowForgotPwd(false);
-        setOtpSent(false);
-        setOtp('');
-        setNewPassword('');
-        setGeneratedOtp('');
-      }
+      console.error(err);
+      alert('Network error - Is the backend running?');
     }
   };
 

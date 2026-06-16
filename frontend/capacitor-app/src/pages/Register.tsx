@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { MobileLayout, GradientButton } from '../components/SharedComponents';
 import { Mail, Lock, User, Eye, EyeOff, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export default function Register() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/auth/register', {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, auth_provider: 'local' })
@@ -34,23 +35,8 @@ export default function Register() {
       login(email, name);
       navigate('/home');
     } catch (err) {
-      console.error('Backend connection failed:', err);
-      // Fallback for local demo mode on GitHub Pages
-      console.log('Backend offline — registering user in local database...');
-      const registeredUsersStr = localStorage.getItem('synctune_registered_users') || '[]';
-      const users = JSON.parse(registeredUsersStr);
-      
-      if (users.some((u: any) => u.email === email)) {
-        alert('Email already exists in local demo database!');
-        navigate('/sign-in');
-        return;
-      }
-      
-      users.push({ name, email, password });
-      localStorage.setItem('synctune_registered_users', JSON.stringify(users));
-      localStorage.setItem('synctune_token', 'local_demo_token_' + Date.now());
-      login(email, name);
-      navigate('/home');
+      console.error(err);
+      alert('Network error - Is the backend running?');
     }
   };
   // Simple password strength
