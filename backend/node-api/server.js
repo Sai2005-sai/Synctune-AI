@@ -13,6 +13,10 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.get('/', (req, res) => {
+    res.json({ status: 'ok', message: 'SyncTune API is running!' });
+});
+
 app.post('/api/auth/register', async (req, res) => {
     const { name, email, password, auth_provider, photo } = req.body;
     
