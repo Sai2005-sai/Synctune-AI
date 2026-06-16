@@ -21,31 +21,49 @@ jobs:
       - name: Start Servers (Backend & Appium)
         shell: powershell
         run: |
-          # Prevent runner from killing background processes when this step completes
-          $env:RUNNER_TRACKING_ID=""
-          
-          # Start Node API Backend
-          Write-Host "Starting local backend API server..."
+          # Install backend dependencies
+          Write-Host "Installing backend dependencies..."
           cd backend/node-api
           npm install
-          Start-Process -FilePath "node" -ArgumentList "server.js" -NoNewWindow
           cd ../..
           
-          # Start Appium Server
-          Write-Host "Starting Appium server..."
-          Start-Process -FilePath "npx.cmd" -ArgumentList "appium", "--allow-insecure=uiautomator2:chromedriver_autodownload" -NoNewWindow
+          # Resolve absolute directories
+          $backendDir = (Resolve-Path "backend/node-api").Path
+          $appiumDir = (Resolve-Path ".").Path
+          
+          # Start Node API Backend using WMI to escape Job Object
+          Write-Host "Starting local backend API server via WMI..."
+          Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
+            CommandLine = "node server.js"
+            CurrentDirectory = $backendDir
+          }
+          
+          # Start Appium Server using WMI to escape Job Object
+          Write-Host "Starting Appium server via WMI..."
+          Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
+            CommandLine = "npx.cmd appium --allow-insecure=uiautomator2:chromedriver_autodownload"
+            CurrentDirectory = $appiumDir
+          }
           
           # Allow some time for servers to boot up
-          Start-Sleep -Seconds 12
+          Start-Sleep -Seconds 15
 
       - name: Verify Servers are Reachable
         shell: powershell
         run: |
           Write-Host "Checking port 5000 (Backend)..."
-          Test-NetConnection -Port 5000 -ComputerName localhost
+          $backendTest = Test-NetConnection -Port 5000 -ComputerName localhost
+          if (-not $backendTest.TcpTestSucceeded) {
+            throw "Backend on port 5000 is not reachable!"
+          }
+          Write-Host "✅ Backend is online!"
           
           Write-Host "Checking port 4723 (Appium)..."
-          Test-NetConnection -Port 4723 -ComputerName localhost
+          $appiumTest = Test-NetConnection -Port 4723 -ComputerName localhost
+          if (-not $appiumTest.TcpTestSucceeded) {
+            throw "Appium on port 4723 is not reachable!"
+          }
+          Write-Host "✅ Appium is online!"
 
       - name: Run Appium Mobile Tests
         shell: powershell
