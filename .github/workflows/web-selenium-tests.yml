@@ -26,44 +26,32 @@ jobs:
             frontend/capacitor-app/package.json
             tests/package.json
 
-      - name: Install Backend Dependencies & Start Server
+      - name: Install Dependencies
         run: |
           cd backend/node-api
           npm install
+          cd ../../frontend/capacitor-app
+          npm install
+          cd ../../tests
+          npm install
+
+      - name: Start Services & Run Selenium E2E Suite
+        run: |
+          # Start Backend Server in background
+          cd backend/node-api
           node server.js &
-          # Keep running in background
-
-      - name: Install Frontend Dependencies & Start Dev Server
-        run: |
-          cd frontend/capacitor-app
-          npm install
-          npm run dev &
-          # Keep running in background
-
-      - name: Install Testing Suite Dependencies
-        run: |
-          cd tests
-          npm install
-
-      - name: Wait for Frontend & Backend services
-        run: |
-          # Wait for backend (port 5000)
-          until curl -s http://localhost:5000 > /dev/null; do
-            echo "Waiting for backend on port 5000..."
-            sleep 2
-          done
-          echo "Backend is up!"
           
-          # Wait for Vite dev server (port 5173)
-          until curl -s http://localhost:5173 > /dev/null; do
-            echo "Waiting for frontend on port 5173..."
-            sleep 2
-          done
-          echo "Frontend Vite server is up!"
-
-      - name: Run Selenium E2E Master Suite
-        run: |
-          node tests/selenium/selenium-runner.js
+          # Start Frontend Server in background
+          cd ../../frontend/capacitor-app
+          npm run dev &
+          
+          # Wait for services to be up and responsive
+          echo "Waiting for services to spin up..."
+          sleep 8
+          
+          # Run E2E tests
+          cd ../../tests
+          node selenium/selenium-runner.js
 
       - name: Upload Selenium Test Reports
         if: always()
