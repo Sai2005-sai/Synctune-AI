@@ -27,6 +27,7 @@ const SUITES = [
   { file: './suites/suite03_dashboard_profile.js',    name: 'Dashboard & Profile',      tests: '42–66'  },
   { file: './suites/suite04_upload.js',               name: 'Upload Video',             tests: '67–86'  },
   { file: './suites/suite05_profile_signout.js',      name: 'Profile & Sign Out',       tests: '87–104' },
+  { file: './suites/suite06_extended_features.js',    name: 'Mobile Extended Suite',    tests: '105–215' },
 ];
 
 const REPORTS_DIR = path.join(__dirname, 'reports');
@@ -44,7 +45,7 @@ async function main() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║        SyncTune AI — E2E Mobile Test Suite                  ║');
   console.log('║        Device: Motorola Edge 50 Fusion                      ║');
-  console.log('║        104 Tests | Appium + WebdriverIO                     ║');
+  console.log('║        215 Tests | Appium + WebdriverIO                     ║');
   console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
   console.log('🔍 Checking backend connection on http://localhost:5000...');
