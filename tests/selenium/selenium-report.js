@@ -13,7 +13,7 @@ async function generateReport(results) {
   }
 
   // Calculate statistics
-  const totalTests = 110;
+  const totalTests = 215;
   const passed = results.filter(r => r.status === 'PASSED').length;
   const failed = results.filter(r => r.status === 'FAILED').length;
   const skipped = totalTests - passed - failed;
@@ -95,8 +95,8 @@ async function generateReport(results) {
     { header: 'Screenshot Path', key: 'screenshot', width: 40 }
   ];
 
-  // Populate 110 test results (or placeholders if some tests didn't run)
-  for (let i = 1; i <= 110; i++) {
+  // Populate 215 test results (or placeholders if some tests didn't run)
+  for (let i = 1; i <= 215; i++) {
     const matched = results.find(r => r.id === i);
     if (matched) {
       sh2.addRow(matched);
@@ -169,7 +169,8 @@ async function generateReport(results) {
     { name: 'Recommended Tracks', start: 76, end: 90 },
     { name: 'Export Configuration & Flow', start: 91, end: 100 },
     { name: 'Profile Settings', start: 101, end: 105 },
-    { name: 'Navigation & Session', start: 106, end: 110 }
+    { name: 'Navigation & Session', start: 106, end: 110 },
+    { name: 'Extended Feature Suite', start: 111, end: 215 }
   ];
 
   suiteList.forEach(s => {
@@ -290,7 +291,8 @@ function getSuiteName(id) {
   if (id <= 90) return 'Recommended Tracks';
   if (id <= 100) return 'Export Configuration & Flow';
   if (id <= 105) return 'Profile Settings';
-  return 'Navigation & Session';
+  if (id <= 110) return 'Navigation & Session';
+  return 'Extended Feature Suite';
 }
 
 function getTestName(id) {
@@ -406,7 +408,116 @@ function getTestName(id) {
     109: 'Navigate directly to /home by typing URL without being logged in — verify redirect to /sign-in',
     110: 'Navigate to unknown route — verify either 404 page shown OR redirect to /sign-in'
   };
-  return names[id] || 'Unknown Test';
+  if (names[id]) return names[id];
+
+  const extendedNames = {
+    111: "Simulate mobile portrait resolution (375x812) — verify page adapts",
+    112: "Simulate tablet portrait resolution (768x1024) — verify layout adjusts",
+    113: "Simulate mobile landscape resolution (812x375) — verify scroll container",
+    114: "Verify html base element has correct lang attribute",
+    115: "Verify meta charset is UTF-8",
+    116: "Verify viewport meta tag is present with initial-scale",
+    117: "Check body element font loading state",
+    118: "Validate main layout root element width boundaries",
+    119: "Check page alignment class configurations",
+    120: "Verify focus outline configuration styles",
+    121: "Verify aria-label or accessible name for logo elements",
+    122: "Verify input fields have corresponding label elements",
+    123: "Check button click state accessibility parameters",
+    124: "Verify color contrast placeholders match accessibility standards",
+    125: "Ensure form submissions do not trigger page refresh loops",
+    126: "Verify interactive cards have correct pointer cursor styles",
+    127: "Ensure loading spinner has appropriate hidden text descriptions",
+    128: "Verify overlay modal backdrop opacity values",
+    129: "Check modal container centering constraints",
+    130: "Verify navigation links are properly indexed",
+    131: "Input email with leading space — verify normalization",
+    132: "Input email with trailing space — verify trim behaviour",
+    133: "Input password exceeding normal limit — verify maxlength constraints",
+    134: "Check password strength UI feedback values",
+    135: "Verify email validation handles multiple domain dots",
+    136: "Test email input with subaddressing symbols (+)",
+    137: "Verify password field toggles visibility correctly",
+    138: "Check input borders highlight on active validation failures",
+    139: "Validate submit buttons show loading state when clicked",
+    140: "Verify error message container displays when validations fail",
+    141: "Ensure email field doesn't trigger unexpected autofill overlap",
+    142: "Verify submit button disabled state when agreement checkbox is unchecked",
+    143: "Ensure back button in registration form retains previous valid fields",
+    144: "Check input fields allow paste clipboard actions",
+    145: "Check input fields allow select-all keyboard shortcuts",
+    146: "Verify forward browser navigation after redirect",
+    147: "Verify back browser navigation after redirect",
+    148: "Ensure direct URL routing to sign-in works correctly",
+    149: "Ensure direct URL routing to register works correctly",
+    150: "Verify relative assets resolution paths",
+    151: "Validate correct query parameter matching",
+    152: "Check routing response times stay within standard limits",
+    153: "Verify page state is cleared upon user sign out",
+    154: "Validate local storage clears correctly upon token expiry",
+    155: "Check session token matches JWT structure format",
+    156: "Verify session header is present in API requests",
+    157: "Check token header format scheme (Bearer)",
+    158: "Ensure token is stored securely in cookie or storage",
+    159: "Check session storage limits constraints",
+    160: "Verify session sync handler runs on startup",
+    161: "Verify toggle themes update the theme cookies",
+    162: "Verify layout style uses standard grid or flex alignment",
+    163: "Verify primary theme color matches CSS custom properties",
+    164: "Verify secondary accent colors load correctly",
+    165: "Validate main page content container padding values",
+    166: "Verify header nav items hover background transitions",
+    167: "Verify dashboard project grid item spacing",
+    168: "Verify dashboard project hover cards elevation styles",
+    169: "Verify empty project list placeholder graphic is visible",
+    170: "Check new project button click delay times",
+    171: "Validate mood badge colors match mood status levels",
+    172: "Verify status badge borders align properly",
+    173: "Verify audio track BPM values show as digits",
+    174: "Verify apply button switches to active configuration",
+    175: "Verify play buttons show pause icon during track playback",
+    176: "Verify pause buttons show play icon when track is paused",
+    177: "Check volume slider changes adjust audio playback volume",
+    178: "Verify track time elapsed counter updates correctly",
+    179: "Verify track total duration matches metadata values",
+    180: "Ensure music player is hidden when no track is selected",
+    181: "Verify video export 1080p selection updates file prediction",
+    182: "Verify video export 720p selection updates file prediction",
+    183: "Verify video export 4K selection updates file prediction",
+    184: "Verify export format MP4 writes correct filename extension",
+    185: "Verify export format MOV writes correct filename extension",
+    186: "Verify export format AVI writes correct filename extension",
+    187: "Verify audio bitrates values scale proportionally",
+    188: "Ensure watermark checkbox state updates preview rendering",
+    189: "Verify export progress animation duration is within bounds",
+    190: "Verify export success modal contains a close button",
+    191: "Verify profile save changes validation message appears",
+    192: "Check user avatar handles mock file uploads",
+    193: "Verify profile update API receives correct parameters",
+    194: "Ensure navigation between tabs does not lose unsaved profile edits",
+    195: "Validate toast notification shows correctly after profile save",
+    196: "Verify toast notification fades out after display interval",
+    197: "Check user settings allows email notification toggles",
+    198: "Verify security tab matches account access details",
+    199: "Verify connected accounts shows integration status",
+    200: "Ensure developer credentials section is restricted",
+    201: "Check app load behaves when window is resized dynamically",
+    202: "Verify double click on submit button is handled correctly",
+    203: "Verify context menu actions do not crash player layout",
+    204: "Check app responds properly to offline network state",
+    205: "Verify app handles network restoration dynamically",
+    206: "Verify invalid JWT signature rejection behaviour",
+    207: "Verify page redirection loop protection is active",
+    208: "Validate image element fallback source tags",
+    209: "Ensure CSS animations do not cause excessive layout reflows",
+    210: "Check font display swap behaviour in CSS variables",
+    211: "Verify localStorage handles quota exceptions",
+    212: "Verify script async loading properties",
+    213: "Ensure CSS variables support custom theme presets",
+    214: "Check system performance marks exist in console logs",
+    215: "Verify general application bundle is production-ready"
+  };
+  return extendedNames[id] || 'Unknown Test';
 }
 
 function getSuggestedFix(id, errorText) {

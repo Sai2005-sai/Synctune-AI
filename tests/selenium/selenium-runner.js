@@ -16,11 +16,12 @@ const runRecTracksTests = require('./tests/07_recommended_tracks_tests');
 const runExportTests = require('./tests/08_export_tests');
 const runProfileTests = require('./tests/09_profile_tests');
 const runNavTests = require('./tests/10_navigation_tests');
+const runExtendedTests = require('./tests/11_extended_validation_tests');
 
 async function runMasterTestSuite() {
   console.log('\n=================================================');
   console.log('🚀 SyncTune AI — Selenium E2E Test Suite');
-  console.log('📋 Total Test Cases: 110');
+  console.log('📋 Total Test Cases: 215');
   console.log('🌐 Testing: http://localhost:5173');
   console.log('⏳ Chrome will open automatically — watch every step...');
   console.log('=================================================\n');
@@ -94,6 +95,9 @@ async function runMasterTestSuite() {
     console.log('\n🎬 Running Suite 10: Navigation Tests...');
     await runNavTests(driver, logger);
 
+    console.log('\n🎬 Running Suite 11: Extended Validation Tests...');
+    await runExtendedTests(driver, logger);
+
   } catch (err) {
     console.error('❌ Critical runtime error in E2E master suite:', err.message);
   } finally {
@@ -101,8 +105,8 @@ async function runMasterTestSuite() {
     const results = logger.exportResults();
     const passed = results.filter(r => r.status === 'PASSED').length;
     const failed = results.filter(r => r.status === 'FAILED').length;
-    const skipped = 110 - passed - failed;
-    const passRate = Math.round((passed / 110) * 100);
+    const skipped = 215 - passed - failed;
+    const passRate = Math.round((passed / 215) * 100);
 
     try {
       await generateReport(results);
@@ -112,9 +116,9 @@ async function runMasterTestSuite() {
 
     console.log('\n=================================================');
     console.log('🏁 MASTER SUITE COMPLETE SUMMARY');
-    console.log(`✅ Passed:   ${passed} / 110`);
-    console.log(`❌ Failed:   ${failed} / 110`);
-    console.log(`⏭️  Skipped:  ${skipped} / 110`);
+    console.log(`✅ Passed:   ${passed} / 215`);
+    console.log(`❌ Failed:   ${failed} / 215`);
+    console.log(`⏭️  Skipped:  ${skipped} / 215`);
     console.log(`📊 Pass Rate: ${passRate}%`);
     console.log('📁 Report: D:/PDD new/tests/selenium/selenium-report.xlsx');
     console.log('=================================================\n');
