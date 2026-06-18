@@ -1,0 +1,66 @@
+name: SyncTune Load & Performance Audit
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  load-test:
+    name: Run Load & Performance Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: tests/package.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend/capacitor-app
+          npm install
+
+      - name: Build Web App
+        run: |
+          cd frontend/capacitor-app
+          npm run build
+
+      - name: Install Backend & Test Dependencies
+        run: |
+          cd backend/node-api
+          npm install
+          cd ../../tests
+          npm install
+
+      - name: Run Backend, Web Server and Load Test Suite
+        run: |
+          # Start Node API backend server in background
+          cd backend/node-api
+          node server.js &
+          
+          # Start Vite Preview web server in background
+          cd ../../frontend/capacitor-app
+          npx vite preview --port 4173 &
+          
+          # Wait for both services to spin up
+          sleep 6
+          
+          # Execute performance & load tests
+          cd ../../tests
+          node run-load-test.js
+
+      - name: Upload Load Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-reports
+          path: load-test-reports/
+          retention-days: 7
