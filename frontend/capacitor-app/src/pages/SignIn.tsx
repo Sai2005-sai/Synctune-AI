@@ -300,16 +300,6 @@ export default function SignIn() {
             width="320"
           />
         </div>
-        <OutlinedButton onClick={() => handleOAuthClick('Apple')} className="w-full flex justify-center gap-3">
-          <svg
-            className="w-5 h-5 text-white"
-            fill="currentColor"
-            viewBox="0 0 24 24">
-            
-            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.04 2.34-.85 3.73-.78 1.52.03 2.73.65 3.48 1.76-2.97 1.7-2.48 5.75.46 6.95-.73 1.83-1.63 3.42-2.75 4.24zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-          </svg>
-          Apple
-        </OutlinedButton>
       </div>
 
       <div className="mt-auto pt-8 text-center">
