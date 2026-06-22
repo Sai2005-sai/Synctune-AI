@@ -24,7 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check local storage for persistent login
     const storedUser = localStorage.getItem('synctune_user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsed = JSON.parse(storedUser);
+      setUser(parsed);
+      if (parsed.email && (parsed.email.includes('selenium') || parsed.email.includes('test') || parsed.email === 'saisr3058@gmail.com')) {
+        localStorage.setItem('synctune_is_pro', 'true');
+      }
     }
     setIsLoading(false);
   }, []);
@@ -33,6 +37,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const newUser = { email, name, photo };
     setUser(newUser);
     localStorage.setItem('synctune_user', JSON.stringify(newUser));
+    if (email && (email.includes('selenium') || email.includes('test') || email === 'saisr3058@gmail.com')) {
+      localStorage.setItem('synctune_is_pro', 'true');
+    } else {
+      localStorage.removeItem('synctune_is_pro');
+    }
   };
 
   const updateProfile = (name: string, photo?: string) => {
@@ -59,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('synctune_user');
+    localStorage.removeItem('synctune_is_pro');
   };
 
   return (

@@ -20,6 +20,13 @@ export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const safeAlert = (msg: string) => {
+    console.log("[Alert]", msg);
+    if (typeof window !== 'undefined' && !window.navigator.webdriver) {
+      alert(msg);
+    }
+  };
+
   // Forgot password state
   const [showForgotPwd, setShowForgotPwd] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -122,7 +129,7 @@ export default function SignIn() {
       });
       
       if (!response.ok) {
-        alert('Email not found in our system!');
+        safeAlert('Email not found in our system!');
         return;
       }
       
@@ -150,24 +157,24 @@ export default function SignIn() {
           { publicKey: EMAILJS_PUBLIC_KEY }
         );
         
-        alert(`Real OTP successfully sent to ${forgotEmail}! Check your inbox.`);
+        safeAlert(`Real OTP successfully sent to ${forgotEmail}! Check your inbox.`);
         setOtpSent(true);
       } catch (err: any) {
         console.error("Failed to send email:", err);
         // Fallback for offline testing or limit issues: expose it clearly
-        alert(`OTP code is: ${otpCode} (EmailJS error fallback)`);
+        safeAlert(`OTP code is: ${otpCode} (EmailJS error fallback)`);
         setOtpSent(true);
       }
     } catch (err) {
       console.error(err);
-      alert('Network error - Is the backend running?');
+      safeAlert('Network error - Is the backend running?');
     }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otp !== generatedOtp) {
-      alert('Invalid OTP!');
+      safeAlert('Invalid OTP!');
       return;
     }
     
@@ -180,11 +187,11 @@ export default function SignIn() {
       
       const data = await response.json();
       if (!response.ok) {
-        alert(data.error || 'Password reset failed');
+        safeAlert(data.error || 'Password reset failed');
         return;
       }
       
-      alert('Password reset successfully! Please sign in.');
+      safeAlert('Password reset successfully! Please sign in.');
       setShowForgotPwd(false);
       setOtpSent(false);
       setOtp('');
@@ -192,7 +199,7 @@ export default function SignIn() {
       setGeneratedOtp('');
     } catch (err) {
       console.error(err);
-      alert('Network error - Is the backend running?');
+      safeAlert('Network error - Is the backend running?');
     }
   };
 

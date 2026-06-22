@@ -13,15 +13,73 @@ import {
 'lucide-react';
 export default function Settings() {
   const navigate = useNavigate();
-  const [darkMode, setDarkMode] = useState(true);
-  const [autoPlay, setAutoPlay] = useState(true);
-  const [notifications, setNotifications] = useState(true);
+
+  const [darkMode, setDarkMode] = useState(() => {
+    return !document.body.classList.contains('light');
+  });
+
+  const [autoPlay, setAutoPlay] = useState(() => {
+    return localStorage.getItem('synctune_autoplay') !== 'false';
+  });
+
+  const [notifications, setNotifications] = useState(() => {
+    return localStorage.getItem('synctune_notifications') !== 'false';
+  });
+
+  const [audioQuality, setAudioQuality] = useState(() => {
+    return localStorage.getItem('synctune_audio_quality') || '320kbps';
+  });
+
+  const [cacheSize, setCacheSize] = useState(() => {
+    const savedCache = localStorage.getItem('synctune_cache_size');
+    if (savedCache) return savedCache;
+    // Generate dynamic mock size based on projects count
+    const saved = localStorage.getItem('synctune_projects');
+    const projCount = saved ? JSON.parse(saved).length : 0;
+    return `${(12.4 + projCount * 8.5).toFixed(1)} MB`;
+  });
+
+  const handleThemeToggle = () => {
+    const nextMode = !darkMode;
+    setDarkMode(nextMode);
+    if (nextMode) {
+      document.body.classList.remove('light');
+      localStorage.setItem('synctune_theme', 'dark');
+    } else {
+      document.body.classList.add('light');
+      localStorage.setItem('synctune_theme', 'light');
+    }
+  };
+
+  const handleAutoPlayToggle = () => {
+    const nextVal = !autoPlay;
+    setAutoPlay(nextVal);
+    localStorage.setItem('synctune_autoplay', String(nextVal));
+  };
+
+  const handleNotificationsToggle = () => {
+    const nextVal = !notifications;
+    setNotifications(nextVal);
+    localStorage.setItem('synctune_notifications', String(nextVal));
+  };
+
+  const cycleAudioQuality = () => {
+    const qualities = ['128kbps', '256kbps', '320kbps'];
+    const nextIndex = (qualities.indexOf(audioQuality) + 1) % qualities.length;
+    const nextQual = qualities[nextIndex];
+    setAudioQuality(nextQual);
+    localStorage.setItem('synctune_audio_quality', nextQual);
+  };
+
+  const handleClearCache = () => {
+    localStorage.setItem('synctune_cache_size', '0.0 MB');
+    setCacheSize('0.0 MB');
+    alert('App cache cleared successfully!');
+  };
+
   const Toggle = ({
     checked,
     onChange
-
-
-
   }: {checked: boolean;onChange: () => void;}) =>
   <button
     onClick={onChange}
@@ -64,21 +122,8 @@ export default function Settings() {
               </div>
               <Toggle
                 checked={darkMode}
-                onChange={() => setDarkMode(!darkMode)} />
+                onChange={handleThemeToggle} />
               
-            </div>
-            <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors">
-              <div className="flex items-center gap-3">
-                <Palette size={18} className="text-accent-cyan" />
-                <span className="text-sm font-medium text-white">
-                  Accent Color
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <div className="w-4 h-4 rounded-full bg-accent-purple" />
-                <div className="w-4 h-4 rounded-full bg-accent-blue" />
-                <div className="w-4 h-4 rounded-full bg-accent-cyan ring-2 ring-white ring-offset-2 ring-offset-dark-surface" />
-              </div>
             </div>
           </GlassCard>
         </section>
@@ -98,16 +143,19 @@ export default function Settings() {
               </div>
               <Toggle
                 checked={autoPlay}
-                onChange={() => setAutoPlay(!autoPlay)} />
+                onChange={handleAutoPlayToggle} />
               
             </div>
-            <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors">
+            <div 
+              onClick={cycleAudioQuality}
+              className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-white ml-8">
                   Default Audio Quality
                 </span>
               </div>
-              <span className="text-sm text-text-secondary">320kbps</span>
+              <span className="text-sm text-text-secondary hover:text-white font-medium">{audioQuality}</span>
             </div>
           </GlassCard>
         </section>
@@ -125,9 +173,12 @@ export default function Settings() {
                   App Cache
                 </span>
               </div>
-              <span className="text-sm font-bold text-white">245 MB</span>
+              <span className="text-sm font-bold text-white">{cacheSize}</span>
             </div>
-            <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-status-error/10 transition-colors group">
+            <div 
+              onClick={handleClearCache}
+              className="p-4 flex items-center justify-between cursor-pointer hover:bg-status-error/10 transition-colors group"
+            >
               <div className="flex items-center gap-3">
                 <Trash2 size={18} className="text-status-error" />
                 <span className="text-sm font-medium text-status-error">
@@ -153,12 +204,11 @@ export default function Settings() {
               </div>
               <Toggle
                 checked={notifications}
-                onChange={() => setNotifications(!notifications)} />
+                onChange={handleNotificationsToggle} />
               
             </div>
           </GlassCard>
         </section>
       </div>
     </MobileLayout>);
-
 }

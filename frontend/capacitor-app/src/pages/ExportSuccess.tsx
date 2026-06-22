@@ -223,45 +223,7 @@ export default function ExportSuccess() {
           </OutlinedButton>
         </motion.div>
 
-        <motion.div
-          initial={{
-            y: 20,
-            opacity: 0
-          }}
-          animate={{
-            y: 0,
-            opacity: 1
-          }}
-          transition={{
-            delay: 0.5
-          }}
-          className="mt-8 w-full">
-          
-          <p className="text-xs text-center text-text-secondary mb-4 uppercase tracking-wider font-medium">
-            Quick Share
-          </p>
-          <div className="flex justify-center gap-4">
-            <button className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#E1306C] hover:border-[#E1306C] transition-all">
-              <Instagram size={20} />
-            </button>
-            <button className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-black hover:border-white/30 transition-all">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="currentColor">
-                
-                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
-              </svg>
-            </button>
-            <button className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#FF0000] hover:border-[#FF0000] transition-all">
-              <Youtube size={20} />
-            </button>
-            <button className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#1DA1F2] hover:border-[#1DA1F2] transition-all">
-              <Twitter size={20} />
-            </button>
-          </div>
-        </motion.div>
+
       </div>
 
       <div className="mt-8 flex justify-center">

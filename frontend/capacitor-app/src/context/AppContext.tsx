@@ -111,6 +111,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const allLoaded: LoadedTrack[] = await loadTracksMetadata(undefined);
       const assignments = assignTracksToSegments(segments, allLoaded, video.duration);
 
+      // Save project to localStorage for persistence
+      try {
+        const saved = localStorage.getItem('synctune_projects');
+        const projList = saved ? JSON.parse(saved) : [];
+        const newProj = {
+          id: Date.now(),
+          name: video.name || 'My SyncTune Project',
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          mood: result.classifiedMood || 'Cinematic',
+          status: 'Completed',
+          duration: '0:15',
+          size: `${Math.round((video.size || 0) / 1024 / 1024)} MB`,
+          img: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=500&auto=format&fit=crop'
+        };
+        if (!projList.some((p: any) => p.name === newProj.name)) {
+          projList.unshift(newProj);
+          localStorage.setItem('synctune_projects', JSON.stringify(projList));
+        }
+      } catch (e) {
+        console.error('Failed to save project:', e);
+      }
+
       setState(s => ({
         ...s, isAnalyzing: false, analysisResult: result,
         matchedTracks: matched, selectedLocalTracks: selected,

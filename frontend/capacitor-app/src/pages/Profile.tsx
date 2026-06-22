@@ -56,6 +56,17 @@ export default function Profile() {
     color: 'text-accent-purple'
   }];
 
+  const projects = (() => {
+    try {
+      const saved = localStorage.getItem('synctune_projects');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const completedProjects = projects.filter((p: any) => p.status === 'Completed');
+
   return (
     <MobileLayout className="flex flex-col relative pb-24">
       {/* Header Background */}
@@ -93,7 +104,7 @@ export default function Profile() {
         <div className="grid grid-cols-3 gap-3 mb-8">
           <GlassCard className="p-3 flex flex-col items-center justify-center text-center">
             <span className="font-display text-xl font-bold text-white mb-1">
-              12
+              {projects.length}
             </span>
             <span className="text-[10px] text-text-secondary uppercase tracking-wider">
               Projects
@@ -101,7 +112,7 @@ export default function Profile() {
           </GlassCard>
           <GlassCard className="p-3 flex flex-col items-center justify-center text-center">
             <span className="font-display text-xl font-bold text-white mb-1">
-              8
+              {completedProjects.length}
             </span>
             <span className="text-[10px] text-text-secondary uppercase tracking-wider">
               Exports
@@ -109,7 +120,7 @@ export default function Profile() {
           </GlassCard>
           <GlassCard className="p-3 flex flex-col items-center justify-center text-center">
             <span className="font-display text-xl font-bold text-accent-cyan mb-1">
-              24h
+              {completedProjects.length > 0 ? `${completedProjects.length * 15}s` : '0s'}
             </span>
             <span className="text-[10px] text-text-secondary uppercase tracking-wider">
               Saved

@@ -57,17 +57,6 @@ export default function HelpFAQ() {
         </h1>
       </div>
 
-      <div className="relative mb-8">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <Search className="h-4 w-4 text-text-secondary" />
-        </div>
-        <input
-          type="text"
-          placeholder="Search for help..."
-          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-accent-purple transition-all" />
-        
-      </div>
-
       <div className="flex-1 flex flex-col">
         <h2 className="text-sm font-bold text-white mb-4">
           Frequently Asked Questions
@@ -118,19 +107,12 @@ export default function HelpFAQ() {
       </div>
 
       <div className="mt-auto pt-6 border-t border-white/10">
-        <h2 className="text-sm font-bold text-white mb-4 text-center">
+        <h2 className="text-sm font-bold text-white mb-2 text-center">
           Still need help?
         </h2>
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <button className="flex flex-col items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-colors">
-            <MessageSquare size={20} className="text-accent-cyan" />
-            <span className="text-xs font-medium text-white">Live Chat</span>
-          </button>
-          <button className="flex flex-col items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-colors">
-            <Mail size={20} className="text-accent-purple" />
-            <span className="text-xs font-medium text-white">Email Us</span>
-          </button>
-        </div>
+        <p className="text-xs text-text-secondary text-center">
+          Email us at: <span className="text-white font-medium">support@synctune.ai</span>
+        </p>
       </div>
     </MobileLayout>);
 

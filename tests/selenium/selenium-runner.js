@@ -21,7 +21,7 @@ const runExtendedTests = require('./tests/11_extended_validation_tests');
 async function runMasterTestSuite() {
   console.log('\n=================================================');
   console.log('🚀 SyncTune AI — Selenium E2E Test Suite');
-  console.log('📋 Total Test Cases: 215');
+  console.log('📋 Running all E2E test suites...');
   console.log('🌐 Testing: http://localhost:5173');
   console.log('⏳ Chrome will open automatically — watch every step...');
   console.log('=================================================\n');
@@ -103,10 +103,11 @@ async function runMasterTestSuite() {
   } finally {
     // Generate Excel report
     const results = logger.exportResults();
+    const totalCount = results.length;
     const passed = results.filter(r => r.status === 'PASSED').length;
     const failed = results.filter(r => r.status === 'FAILED').length;
-    const skipped = 215 - passed - failed;
-    const passRate = Math.round((passed / 215) * 100);
+    const skipped = results.filter(r => r.status === 'SKIPPED').length;
+    const passRate = totalCount > 0 ? Math.round((passed / totalCount) * 100) : 0;
 
     try {
       await generateReport(results);
@@ -116,9 +117,9 @@ async function runMasterTestSuite() {
 
     console.log('\n=================================================');
     console.log('🏁 MASTER SUITE COMPLETE SUMMARY');
-    console.log(`✅ Passed:   ${passed} / 215`);
-    console.log(`❌ Failed:   ${failed} / 215`);
-    console.log(`⏭️  Skipped:  ${skipped} / 215`);
+    console.log(`✅ Passed:   ${passed} / ${totalCount}`);
+    console.log(`❌ Failed:   ${failed} / ${totalCount}`);
+    console.log(`⏭️  Skipped:  ${skipped} / ${totalCount}`);
     console.log(`📊 Pass Rate: ${passRate}%`);
     console.log('📁 Report: D:/PDD new/tests/selenium/selenium-report.xlsx');
     console.log('=================================================\n');

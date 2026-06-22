@@ -309,9 +309,17 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppContent = () => {
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem('synctune_theme');
+    if (savedTheme === 'light') {
+      document.body.classList.add('light');
+    } else {
+      document.body.classList.remove('light');
+    }
+  }, []);
+
   return (
     <>
-      <DevNav />
       <Routes>
         {/* Auth Flow */}
         <Route path="/" element={<SplashScreen />} />

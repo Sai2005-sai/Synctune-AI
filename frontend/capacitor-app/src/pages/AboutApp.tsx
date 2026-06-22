@@ -116,33 +116,6 @@ export default function AboutApp() {
           </GlassCard>
         </div>
 
-        <div className="flex gap-6 mb-12">
-          <a
-            href="#"
-            className="text-text-secondary hover:text-white transition-colors">
-            
-            <Globe size={20} />
-          </a>
-          <a
-            href="#"
-            className="text-text-secondary hover:text-white transition-colors">
-            
-            <Twitter size={20} />
-          </a>
-          <a
-            href="#"
-            className="text-text-secondary hover:text-white transition-colors">
-            
-            <Instagram size={20} />
-          </a>
-          <a
-            href="#"
-            className="text-text-secondary hover:text-white transition-colors">
-            
-            <Github size={20} />
-          </a>
-        </div>
-
         <div className="mt-auto flex items-center gap-2 text-xs text-text-secondary">
           Made with{' '}
           <Heart size={12} className="text-status-error fill-status-error" /> by

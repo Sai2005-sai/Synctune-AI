@@ -11,28 +11,25 @@ import { useApp } from '../context/AppContext';
 
 export default function ProjectHistory() {
   const navigate = useNavigate();
-  const { video, analysisResult } = useApp();
   const [activeTab, setActiveTab] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchInput, setShowSearchInput] = useState(false);
   
-  const projects = video ? [{
-    id: 1,
-    name: video.name || 'My SyncTune Project',
-    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    mood: analysisResult?.classifiedMood || 'Cinematic',
-    status: 'Completed',
-    duration: '0:15',
-    size: `${Math.round((video.size || 0) / 1024 / 1024)} MB`,
-    img: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=500&auto=format&fit=crop'
-  }] : [];
+  const projects = (() => {
+    try {
+      const saved = localStorage.getItem('synctune_projects');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  })();
 
-  const filteredProjects =
-  activeTab === 'All' ?
-  projects :
-  projects.filter(
-    (p) =>
-    p.status === activeTab ||
-    activeTab === 'In Progress' && p.status === 'Draft'
-  );
+  const filteredProjects = projects.filter((p: any) => {
+    const matchesTab = activeTab === 'All' || p.status === activeTab || (activeTab === 'In Progress' && p.status === 'Draft');
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesTab && matchesSearch;
+  });
+
   return (
     <MobileLayout className="flex flex-col relative">
       <div className="sticky top-0 z-20 bg-dark-bg/90 backdrop-blur-xl px-6 py-6 border-b border-white/10">
@@ -40,10 +37,34 @@ export default function ProjectHistory() {
           <h1 className="font-display text-2xl font-bold text-white">
             My Projects
           </h1>
-          <button className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors">
+          <button 
+            onClick={() => setShowSearchInput(!showSearchInput)}
+            className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors ${showSearchInput ? 'bg-accent-cyan border-accent-cyan text-dark-bg' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}
+          >
             <Search size={18} />
           </button>
         </div>
+
+        {showSearchInput && (
+          <div className="mb-4 relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search projects..."
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-4 pr-10 text-sm text-white focus:outline-none focus:border-accent-cyan transition-colors"
+              autoFocus
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-3 text-text-secondary hover:text-white text-xs"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-2">
           {['All', 'Completed', 'In Progress'].map((tab) =>

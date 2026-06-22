@@ -8,10 +8,29 @@ import {
 import { ArrowLeft, Download, Film, Music, Info } from 'lucide-react';
 export default function ExportSettings() {
   const navigate = useNavigate();
+  const [isPro] = useState(() => localStorage.getItem('synctune_is_pro') === 'true');
   const [quality, setQuality] = useState('1080p');
   const [format, setFormat] = useState('MP4');
-  const [audio, setAudio] = useState('320kbps');
+  const [audio, setAudio] = useState(() => isPro ? '320kbps' : '256kbps');
   const [watermark, setWatermark] = useState(false);
+
+  const handleQualityChange = (q: string) => {
+    if (q === '4K' && !isPro) {
+      alert('4K export is a PRO feature. Please subscribe to SyncTune PRO to unlock.');
+      navigate('/subscription');
+      return;
+    }
+    setQuality(q);
+  };
+
+  const handleAudioChange = (a: string) => {
+    if (a === '320kbps' && !isPro) {
+      alert('320kbps high-quality audio is a PRO feature. Please subscribe to SyncTune PRO to unlock.');
+      navigate('/subscription');
+      return;
+    }
+    setAudio(a);
+  };
   return (
     <MobileLayout hideNav className="flex flex-col px-6 py-8">
       <div className="flex items-center gap-4 mb-8">
@@ -37,7 +56,7 @@ export default function ExportSettings() {
             {['720p', '1080p', '4K'].map((q) =>
             <button
               key={q}
-              onClick={() => setQuality(q)}
+              onClick={() => handleQualityChange(q)}
               className={`py-3 rounded-xl text-sm font-medium transition-all border ${quality === q ? 'bg-accent-cyan/10 border-accent-cyan text-accent-cyan shadow-[0_0_10px_rgba(6,182,212,0.2)]' : 'bg-white/5 border-white/10 text-text-secondary hover:bg-white/10'}`}>
               
                 {q}
@@ -75,7 +94,7 @@ export default function ExportSettings() {
             {['128kbps', '256kbps', '320kbps'].map((a) =>
             <button
               key={a}
-              onClick={() => setAudio(a)}
+              onClick={() => handleAudioChange(a)}
               className={`py-3 rounded-xl text-sm font-medium transition-all border ${audio === a ? 'bg-accent-blue/10 border-accent-blue text-accent-blue shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/10 text-text-secondary hover:bg-white/10'}`}>
               
                 {a}
@@ -84,27 +103,6 @@ export default function ExportSettings() {
           </div>
         </section>
 
-        {/* Toggles */}
-        <section className="space-y-3 pt-2">
-          <GlassCard className="p-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-white">
-                Include Watermark
-              </h3>
-              <p className="text-xs text-text-secondary mt-0.5">
-                Support SyncTune AI
-              </p>
-            </div>
-            <button
-              onClick={() => setWatermark(!watermark)}
-              className={`w-12 h-6 rounded-full transition-colors relative ${watermark ? 'bg-gradient-accent' : 'bg-white/20'}`}>
-              
-              <div
-                className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${watermark ? 'left-7' : 'left-1'}`} />
-              
-            </button>
-          </GlassCard>
-        </section>
 
         {/* Summary */}
         <GlassCard className="p-4 mt-auto">

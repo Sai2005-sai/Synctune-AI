@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout, GlassCard, GradientButton } from '../components/SharedComponents';
-import { ArrowLeft, Crown, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Crown, CheckCircle2, QrCode, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function Subscription() {
   const navigate = useNavigate();
+  const [showUPIModal, setShowUPIModal] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'verifying' | 'success'>('idle');
+  const [isPro, setIsPro] = useState(() => localStorage.getItem('synctune_is_pro') === 'true');
 
   const features = [
     'Unlimited Video Exports',
@@ -13,6 +16,43 @@ export default function Subscription() {
     'No Watermarks',
     'Priority Rendering'
   ];
+
+  const [timerId, setTimerId] = useState<any>(null);
+
+  const handleUpgradeClick = () => {
+    setShowUPIModal(true);
+    setPaymentStatus('idle');
+    const tid = setTimeout(() => {
+      startPaymentVerification();
+    }, 5000);
+    setTimerId(tid);
+  };
+
+  const handleCancelPayment = () => {
+    setShowUPIModal(false);
+    if (timerId) {
+      clearTimeout(timerId);
+      setTimerId(null);
+    }
+  };
+
+  const startPaymentVerification = () => {
+    setPaymentStatus('verifying');
+    setTimeout(() => {
+      setPaymentStatus('success');
+      localStorage.setItem('synctune_is_pro', 'true');
+      setIsPro(true);
+      setTimeout(() => {
+        setShowUPIModal(false);
+        window.location.reload();
+      }, 2000);
+    }, 3000);
+  };
+
+  // UPI deep link
+  const upiLink = "upi://pay?pa=saisarvesh201@okicici&pn=SyncTune&am=10&cu=INR";
+  // QR code image URL using a free qr generator api
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
 
   return (
     <MobileLayout hideNav className="flex flex-col relative pb-24">
@@ -32,16 +72,27 @@ export default function Subscription() {
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(250,204,21,0.3)]">
             <Crown size={36} className="text-dark-bg" fill="currentColor" />
           </div>
-          <h2 className="font-display text-2xl font-bold text-white mb-2">SyncTune PRO</h2>
-          <p className="text-text-secondary text-sm">Unlock the ultimate AI music syncing experience.</p>
+          <h2 className="font-display text-2xl font-bold text-white mb-2">
+            {isPro ? 'SyncTune PRO Active' : 'SyncTune PRO'}
+          </h2>
+          <p className="text-text-secondary text-sm">
+            {isPro ? 'You have unlocked the ultimate AI music syncing experience.' : 'Unlock the ultimate AI music syncing experience.'}
+          </p>
         </div>
 
-        <GlassCard className="p-6 mb-8 border-yellow-500/30 bg-yellow-500/5 relative overflow-hidden">
+        <GlassCard className={`p-6 mb-8 border-yellow-500/30 relative overflow-hidden ${isPro ? 'bg-yellow-500/10' : 'bg-yellow-500/5'}`}>
           <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 blur-3xl rounded-full" />
           
-          <div className="mb-6">
-            <span className="text-3xl font-bold text-white">$9.99</span>
-            <span className="text-text-secondary text-sm"> / month</span>
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <span className="text-3xl font-bold text-white">₹10</span>
+              <span className="text-text-secondary text-sm"> / month</span>
+            </div>
+            {isPro && (
+              <span className="bg-yellow-500 text-dark-bg text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                Active
+              </span>
+            )}
           </div>
 
           <div className="space-y-4 mb-8">
@@ -53,12 +104,75 @@ export default function Subscription() {
             ))}
           </div>
 
-          <GradientButton className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 shadow-yellow-500/25">
-            Upgrade to PRO
-          </GradientButton>
+          {isPro ? (
+            <div className="text-center py-3 text-yellow-400 font-semibold text-sm bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+              Thank you for being a PRO member!
+            </div>
+          ) : (
+            <GradientButton 
+              onClick={handleUpgradeClick}
+              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 shadow-yellow-500/25"
+            >
+              Upgrade to PRO
+            </GradientButton>
+          )}
           <p className="text-center text-[10px] text-text-muted mt-4">Cancel anytime. Terms & conditions apply.</p>
         </GlassCard>
       </div>
+
+      {/* UPI Payment Modal */}
+      {showUPIModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
+          <GlassCard className="w-full max-w-sm p-6 relative flex flex-col items-center">
+            {paymentStatus === 'idle' && (
+              <>
+                <h3 className="font-display font-bold text-lg text-white mb-2">UPI QR Payment</h3>
+                <p className="text-xs text-text-secondary text-center mb-6">
+                  Scan the QR code below using any UPI App (GPay, PhonePe, Paytm) to make payment of ₹10.
+                </p>
+                
+                <div className="p-3 bg-white rounded-2xl mb-6 flex items-center justify-center shadow-lg">
+                  <img src={qrCodeUrl} alt="UPI QR Code" className="w-48 h-48" />
+                </div>
+                <div className="w-full text-center mb-6">
+                  <p className="text-xs text-yellow-500 font-semibold animate-pulse">
+                    Waiting for payment detection...
+                  </p>
+                </div>
+
+                <button 
+                  onClick={handleCancelPayment}
+                  className="text-text-secondary hover:text-white text-xs"
+                >
+                  Cancel Payment
+                </button>
+              </>
+            )}
+
+            {paymentStatus === 'verifying' && (
+              <div className="py-12 flex flex-col items-center justify-center text-center">
+                <RefreshCw size={48} className="text-yellow-400 animate-spin mb-4" />
+                <h3 className="font-display font-bold text-lg text-white mb-2">Verifying Payment</h3>
+                <p className="text-xs text-text-secondary max-w-xs">
+                  Checking transaction status with the bank network. Please do not close this window.
+                </p>
+              </div>
+            )}
+
+            {paymentStatus === 'success' && (
+              <div className="py-12 flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 bg-status-success/20 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle2 size={36} className="text-status-success" />
+                </div>
+                <h3 className="font-display font-bold text-lg text-white mb-2">Payment Successful!</h3>
+                <p className="text-xs text-text-secondary max-w-xs">
+                  Welcome to SyncTune PRO. Your premium features are now unlocked!
+                </p>
+              </div>
+            )}
+          </GlassCard>
+        </div>
+      )}
     </MobileLayout>
   );
 }

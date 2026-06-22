@@ -18,34 +18,14 @@ export default function HomeDashboard() {
     { id: 2, title: 'Export Ready', desc: 'Your cinematic video project is ready for download.', time: '2 hours ago' }
   ]);
 
-  const recentProjects = [
-  {
-    id: 1,
-    name: 'Summer Vlog 2023',
-    date: '2 days ago',
-    mood: 'Happy',
-    status: 'Completed',
-    duration: '2:45',
-    img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=500&auto=format&fit=crop'
-  },
-  {
-    id: 2,
-    name: 'Cinematic Drone',
-    date: '5 days ago',
-    mood: 'Cinematic',
-    status: 'Completed',
-    duration: '1:12',
-    img: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=500&auto=format&fit=crop'
-  },
-  {
-    id: 3,
-    name: 'Workout Routine',
-    date: '1 week ago',
-    mood: 'Energetic',
-    status: 'Draft',
-    duration: '0:45',
-    img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=500&auto=format&fit=crop'
-  }];
+  const recentProjects = (() => {
+    try {
+      const saved = localStorage.getItem('synctune_projects');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  })();
 
   return (
     <MobileLayout className="px-6 pt-12 pb-24">
@@ -104,13 +84,21 @@ export default function HomeDashboard() {
             </div>
           )}
 
-          <div className="w-10 h-10 rounded-full bg-gradient-accent p-[2px]">
-            <img
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop"
-              alt="Profile"
-              className="w-full h-full rounded-full border-2 border-dark-bg object-cover" />
-            
-          </div>
+          <button 
+            onClick={() => navigate('/profile')}
+            className="w-10 h-10 rounded-full bg-gradient-accent p-[2px] cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+          >
+            {user?.photo ? (
+              <img
+                src={user.photo}
+                alt="Profile"
+                className="w-full h-full rounded-full border-2 border-dark-bg object-cover" />
+            ) : (
+              <div className="w-full h-full bg-dark-bg rounded-full flex items-center justify-center border-2 border-dark-bg">
+                <span className="text-xs font-bold text-white uppercase">{user?.name?.charAt(0) || 'U'}</span>
+              </div>
+            )}
+          </button>
         </div>
       </div>
 
@@ -147,24 +135,29 @@ export default function HomeDashboard() {
         </div>
 
         <div className="space-y-4">
-          {recentProjects.map((project, i) =>
-          <motion.div
-            key={project.id}
-            initial={{
-              opacity: 0,
-              y: 20
-            }}
-            animate={{
-              opacity: 1,
-              y: 0
-            }}
-            transition={{
-              delay: i * 0.1
-            }}>
-            
-              <GlassCard
-              className="flex gap-4 p-3"
-              onClick={() => navigate('/preview')}>
+          {recentProjects.length === 0 ? (
+            <div className="text-center py-10 opacity-50 text-text-secondary text-sm bg-white/5 border border-white/10 rounded-2xl">
+              No recent projects
+            </div>
+          ) : (
+            recentProjects.map((project, i) =>
+              <motion.div
+                key={project.id}
+                initial={{
+                  opacity: 0,
+                  y: 20
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0
+                }}
+                transition={{
+                  delay: i * 0.1
+                }}>
+                
+                  <GlassCard
+                  className="flex gap-4 p-3"
+                  onClick={() => navigate('/preview')}>
               
                 <div className="relative w-24 h-24 rounded-xl overflow-hidden shrink-0">
                   <img
@@ -208,7 +201,8 @@ export default function HomeDashboard() {
                 </div>
               </GlassCard>
             </motion.div>
-          )}
+          )
+        )}
         </div>
       </div>
     </MobileLayout>);
