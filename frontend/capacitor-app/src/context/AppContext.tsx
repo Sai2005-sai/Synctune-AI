@@ -39,6 +39,7 @@ interface AppActions {
   runAnalysis: () => Promise<void>;
   selectTrack: (id: string) => void;
   resetAll: () => void;
+  loadProject: (project: any) => Promise<void>;
 }
 
 const defaultState: AppState = {
@@ -51,12 +52,46 @@ const AppCtx = createContext<AppState & AppActions>({
   ...defaultState,
   setVideo: () => {}, setVideoDuration: () => {}, setPrompt: () => {},
   runAnalysis: async () => {}, selectTrack: () => {}, resetAll: () => {},
+  loadProject: async () => {},
 });
 
 export const useApp = () => useContext(AppCtx);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(defaultState);
+
+  const loadProject = useCallback(async (project: any) => {
+    const mockVideo: VideoFile = {
+      url: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-12407-large.mp4',
+      name: project.name || 'My SyncTune Project',
+      size: 1024 * 1024 * 12,
+      duration: 15
+    };
+
+    const meta = { uri: mockVideo.url, name: mockVideo.name, size: mockVideo.size, duration: mockVideo.duration };
+    const fallback = analyzeVideoFallback(meta);
+    if (project.mood) {
+      fallback.classifiedMood = project.mood;
+    }
+    const matched = matchBGM(fallback);
+    const selected = selectTracks(fallback.classifiedMood, fallback.energyLevel);
+    
+    const allLoaded = await loadTracksMetadata(undefined);
+    const segments = [{ id: 'seg_1', startTime: 0, endTime: 15, duration: 15, mood: fallback.classifiedMood }];
+    const assignments = [{ segment: segments[0], track: allLoaded[0] || matched[0] || selected[0], audioStartTime: 0 }];
+
+    setState({
+      video: mockVideo,
+      prompt: '',
+      isAnalyzing: false,
+      analysisResult: fallback,
+      analysisError: null,
+      matchedTracks: matched,
+      selectedLocalTracks: selected,
+      segmentAssignments: assignments,
+      selectedTrackId: matched[0]?.id ?? null,
+    });
+  }, []);
 
   const setVideo = useCallback((v: VideoFile | null) =>
     setState(s => ({ ...s, video: v, analysisResult: null, matchedTracks: [], segmentAssignments: [], analysisError: null })), []);
@@ -158,7 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   return (
-    <AppCtx.Provider value={{ ...state, setVideo, setVideoDuration, setPrompt, runAnalysis, selectTrack, resetAll }}>
+    <AppCtx.Provider value={{ ...state, setVideo, setVideoDuration, setPrompt, runAnalysis, selectTrack, resetAll, loadProject }}>
       {children}
     </AppCtx.Provider>
   );

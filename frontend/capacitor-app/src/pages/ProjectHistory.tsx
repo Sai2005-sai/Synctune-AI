@@ -11,6 +11,7 @@ import { useApp } from '../context/AppContext';
 
 export default function ProjectHistory() {
   const navigate = useNavigate();
+  const { loadProject } = useApp();
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchInput, setShowSearchInput] = useState(false);
@@ -103,7 +104,10 @@ export default function ProjectHistory() {
             
               <GlassCard
               className="flex gap-4 p-3"
-              onClick={() => navigate('/preview')}>
+              onClick={async () => {
+                await loadProject(project);
+                navigate('/preview');
+              }}>
               
                 <div className="relative w-24 h-24 rounded-xl overflow-hidden shrink-0">
                   <img

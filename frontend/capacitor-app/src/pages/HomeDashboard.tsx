@@ -8,10 +8,12 @@ import {
   '../components/SharedComponents';
 import { Bell, Plus, Play, MoreVertical } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
 
 export default function HomeDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { loadProject } = useApp();
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState([
     { id: 1, title: 'Welcome to SyncTune AI!', desc: 'Explore AI-generated backing tracks for your videos.', time: 'Just now' },
@@ -157,7 +159,10 @@ export default function HomeDashboard() {
                 
                   <GlassCard
                   className="flex gap-4 p-3"
-                  onClick={() => navigate('/preview')}>
+                  onClick={async () => {
+                    await loadProject(project);
+                    navigate('/preview');
+                  }}>
               
                 <div className="relative w-24 h-24 rounded-xl overflow-hidden shrink-0">
                   <img

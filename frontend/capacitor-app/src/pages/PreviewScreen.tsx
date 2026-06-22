@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import {
   MobileLayout,
   GradientButton,
@@ -31,7 +31,7 @@ export default function PreviewScreen() {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   // Redirect if no video
-  if (!video) { navigate('/upload'); return null; }
+  if (!video) { return <Navigate to="/upload" replace />; }
 
   // Find selected track
   const selectedTrack = matchedTracks.find(t => t.id === selectedTrackId) ?? matchedTracks[0];

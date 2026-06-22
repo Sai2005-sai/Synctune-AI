@@ -6,6 +6,7 @@ import {
   Route,
   Link,
   useLocation,
+  useNavigate,
   Navigate } from
 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -309,12 +310,50 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppContent = () => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
   React.useEffect(() => {
     const savedTheme = localStorage.getItem('synctune_theme');
     if (savedTheme === 'light') {
       document.body.classList.add('light');
     } else {
       document.body.classList.remove('light');
+    }
+  }, []);
+
+  // Global Google OAuth token handler - catches redirect back from Google
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      if (accessToken) {
+        // Clear hash from address bar immediately
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`)
+          .then(res => res.json())
+          .then(async userInfo => {
+            if (userInfo && userInfo.email) {
+              const name = userInfo.name || userInfo.email.split('@')[0];
+              const picture = userInfo.picture || '';
+              const { API_URL } = await import('./config');
+              try {
+                await fetch(`${API_URL}/api/auth/register`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ name, email: userInfo.email, auth_provider: 'Google', photo: picture })
+                });
+              } catch (e) { /* ignore - user may already exist */ }
+              login(userInfo.email, name, picture);
+              navigate('/home', { replace: true });
+            }
+          })
+          .catch(err => {
+            console.error("Google OAuth error:", err);
+          });
+      }
     }
   }, []);
 

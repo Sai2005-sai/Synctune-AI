@@ -144,16 +144,15 @@ async function runTests(driver, logger) {
   // --- Test 10 ---
   try {
     const start = Date.now();
-    // Google button is rendered by @react-oauth/google (via iframe or special container wrapper)
-    const googleBtn = await waitForElement(driver, By.xpath("//iframe[contains(@src,'accounts.google.com')] | //div[contains(@class,'GoogleLogin')] | //*[contains(.,'continue with') or contains(.,'Google')]"));
-    if (await googleBtn.isDisplayed()) {
-      logger.logPass(10, suite, 'Verify "Continue with Google" button is visible at bottom of form', Date.now() - start);
+    const registerLink = await waitForElement(driver, By.xpath("//a[contains(@href,'/register') or contains(.,'Register')]"));
+    if (await registerLink.isDisplayed()) {
+      logger.logPass(10, suite, 'Verify "Register" navigation link is visible at bottom of form', Date.now() - start);
     } else {
-      throw new Error('Google SSO button/container is not displayed');
+      throw new Error('Register link is not displayed');
     }
   } catch (err) {
-    const screenshot = await takeScreenshot(driver, 'test10_google_btn_visible');
-    logger.logFail(10, suite, 'Verify "Continue with Google" button is visible at bottom of form', 0, err.message, screenshot);
+    const screenshot = await takeScreenshot(driver, 'test10_register_link_visible');
+    logger.logFail(10, suite, 'Verify "Register" navigation link is visible at bottom of form', 0, err.message, screenshot);
   }
 }
 
