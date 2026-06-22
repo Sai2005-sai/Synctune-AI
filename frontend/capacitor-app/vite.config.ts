@@ -7,5 +7,11 @@ export default defineConfig(({ command }) => ({
   plugins: [react()],
   server: {
     // Headers removed to allow Google OAuth cross-origin popups
+  },
+  optimizeDeps: {
+    entries: [
+      'index.html',
+      'src/**/*.{ts,tsx,js,jsx}'
+    ]
   }
 }))
