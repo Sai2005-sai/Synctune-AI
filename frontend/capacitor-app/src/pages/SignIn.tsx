@@ -8,9 +8,6 @@ import {
 '../components/SharedComponents';
 import { Mail, Lock, Eye, EyeOff, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { GoogleLogin } from '@react-oauth/google';
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
-import { jwtDecode } from 'jwt-decode';
 import emailjs from '@emailjs/browser';
 import { API_URL } from '../config';
 
@@ -77,33 +74,10 @@ export default function SignIn() {
     navigate('/home');
   };
 
-  const handleOAuthClick = async (provider: string) => {
-    if (provider === 'Google') {
-      try {
-        // Use native Google Sign-In via Capacitor plugin (no browser redirect needed)
-        await GoogleAuth.initialize({
-          clientId: '61136341892-o6a6pcabnolhj2ec3jidmfron4bept0e.apps.googleusercontent.com',
-          scopes: ['profile', 'email'],
-          grantOfflineAccess: false
-        });
-        const googleUser = await GoogleAuth.signIn();
-        if (googleUser && googleUser.email) {
-          const name = googleUser.name || googleUser.email.split('@')[0];
-          const photo = googleUser.imageUrl || '';
-          handleOAuthLogin('Google', googleUser.email, name, photo);
-        }
-      } catch (err) {
-        console.error('Google Sign-In error:', err);
-        // Fallback: show the OAuth account modal
-        setOauthProvider(provider);
-        setShowCustomOauthInput(false);
-        setCustomOauthEmail('');
-      }
-    } else {
-      setOauthProvider(provider);
-      setShowCustomOauthInput(false);
-      setCustomOauthEmail('');
-    }
+  const handleOAuthClick = (provider: string) => {
+    setOauthProvider(provider);
+    setShowCustomOauthInput(false);
+    setCustomOauthEmail('');
   };
 
   const registerOAuthUser = async (email: string, name: string, provider: string, photo?: string) => {
