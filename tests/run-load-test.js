@@ -249,6 +249,9 @@ async function main() {
   let totalResponseTimeSum = 0;
   let countResponseTimes = 0;
 
+  console.log('\n🟢 Auditing Performance & Load Metrics:');
+  console.log('─'.repeat(60));
+
   results.forEach(r => {
     r.status = r.measured <= r.threshold ? 'PASS' : 'FAIL';
     r.result = `${r.measured}${r.unit}`;
@@ -258,6 +261,10 @@ async function main() {
       totalResponseTimeSum += r.measured;
       countResponseTimes++;
     }
+
+    const checkId = String(r.id).padStart(3, '0');
+    const color = r.status === 'PASS' ? '\x1b[32mPASSED\x1b[0m' : '\x1b[31mFAILED\x1b[0m';
+    console.log(`⏳ [LD-PERF-${checkId}] Checking [${r.category}] ${r.name} ... ${color}`);
   });
 
   const failed = total - passed;
