@@ -1,14 +1,23 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   MobileLayout,
   GlassCard,
   MoodChip } from
-'../components/SharedComponents';
+  '../components/SharedComponents';
 import { Bell, Plus, Play, MoreVertical } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
 export default function HomeDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState([
+    { id: 1, title: 'Welcome to SyncTune AI!', desc: 'Explore AI-generated backing tracks for your videos.', time: 'Just now' },
+    { id: 2, title: 'Export Ready', desc: 'Your cinematic video project is ready for download.', time: '2 hours ago' }
+  ]);
+
   const recentProjects = [
   {
     id: 1,
@@ -49,13 +58,52 @@ export default function HomeDashboard() {
               AI
             </span>
           </h1>
-          <p className="text-text-secondary text-sm">Welcome back, Alex</p>
+          <p className="text-text-secondary text-sm">Welcome back, {user?.name || 'User'}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center relative">
+        <div className="flex items-center gap-3 relative">
+          <button 
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center relative hover:bg-white/10 transition-colors"
+          >
             <Bell size={18} className="text-white" />
-            <span className="absolute top-2 right-2.5 w-2 h-2 bg-status-error rounded-full border border-dark-bg" />
+            {unreadNotifications.length > 0 && (
+              <span className="absolute top-2 right-2.5 w-2 h-2 bg-status-error rounded-full border border-dark-bg" />
+            )}
           </button>
+          
+          {showNotifications && (
+            <div className="absolute right-12 top-12 w-72 bg-dark-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-white font-semibold text-sm">Notifications</span>
+                {unreadNotifications.length > 0 && (
+                  <button 
+                    onClick={() => setUnreadNotifications([])}
+                    className="text-accent-cyan text-xs font-medium hover:underline"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {unreadNotifications.length === 0 ? (
+                  <div className="text-center py-6 text-text-secondary text-xs">
+                    No new notifications
+                  </div>
+                ) : (
+                  unreadNotifications.map((notif) => (
+                    <div key={notif.id} className="p-2.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                      <div className="flex justify-between items-start">
+                        <h4 className="text-white text-xs font-bold">{notif.title}</h4>
+                        <span className="text-[10px] text-text-secondary">{notif.time}</span>
+                      </div>
+                      <p className="text-text-secondary text-[11px] mt-1 leading-relaxed">{notif.desc}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="w-10 h-10 rounded-full bg-gradient-accent p-[2px]">
             <img
               src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop"
