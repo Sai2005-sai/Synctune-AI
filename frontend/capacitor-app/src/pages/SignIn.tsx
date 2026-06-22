@@ -70,11 +70,53 @@ export default function SignIn() {
   const [customOauthEmail, setCustomOauthEmail] = useState('');
   const [showCustomOauthInput, setShowCustomOauthInput] = useState(false);
 
-  const handleOAuthClick = (provider: string) => {
-    setOauthProvider(provider);
-    setShowCustomOauthInput(false);
-    setCustomOauthEmail('');
+  const handleOAuthLogin = (provider: string, email: string, name: string, photo?: string) => {
+    registerOAuthUser(email, name, provider, photo);
+    login(email, name, photo);
+    navigate('/home');
   };
+
+  const handleOAuthClick = (provider: string) => {
+    if (provider === 'Google') {
+      const client_id = "61136341892-o6a6pcabnolhj2ec3jidmfron4bept0e.apps.googleusercontent.com";
+      const redirect_uri = window.location.origin + window.location.pathname;
+      const scope = "email profile openid";
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
+      window.location.href = authUrl;
+    } else {
+      setOauthProvider(provider);
+      setShowCustomOauthInput(false);
+      setCustomOauthEmail('');
+    }
+  };
+
+  // Check for Google OAuth redirect hash on load
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      if (accessToken) {
+        // Clear hash from address bar for a clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Fetch user information from Google API
+        fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`)
+          .then(res => res.json())
+          .then(userInfo => {
+            if (userInfo && userInfo.email) {
+              const name = userInfo.name || userInfo.email.split('@')[0];
+              const picture = userInfo.picture || '';
+              handleOAuthLogin('Google', userInfo.email, name, picture);
+            }
+          })
+          .catch(err => {
+            console.error("Error fetching user info:", err);
+            alert("Failed to get Google profile information");
+          });
+      }
+    }
+  }, []);
 
   const registerOAuthUser = async (email: string, name: string, provider: string, photo?: string) => {
     try {
@@ -87,12 +129,6 @@ export default function SignIn() {
     } catch (e) {
       console.error(e);
     }
-  };
-
-  const handleOAuthLogin = (provider: string, email: string, name: string) => {
-    registerOAuthUser(email, name, provider);
-    login(email, name);
-    navigate('/home');
   };
 
   const handleRealGoogleLoginSuccess = (credentialResponse: any) => {
