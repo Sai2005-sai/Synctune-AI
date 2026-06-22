@@ -47,3 +47,5 @@ tests/reports/
 tests/mobile-tests/reports/
 tests/mobile-tests/screenshots/
 tests/selenium/screenshots/
+load-test-reports/
+
