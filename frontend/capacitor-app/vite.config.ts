@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => ({
-  base: process.env.VITE_CAPACITOR === 'true' ? '/' : (command === 'build' ? '/Synctune-AI/' : '/'),
+  base: '/',
   plugins: [react()],
   server: {
     // Headers removed to allow Google OAuth cross-origin popups
