@@ -42,6 +42,7 @@ interface AppActions {
   selectTrack: (id: string) => void;
   resetAll: () => void;
   loadProject: (project: any) => Promise<void>;
+  updateProject: (project: any) => Promise<void>;
   projects: any[];
 }
 
@@ -56,6 +57,7 @@ const AppCtx = createContext<AppState & AppActions>({
   setVideo: () => {}, setVideoDuration: () => {}, setPrompt: () => {},
   runAnalysis: async () => {}, selectTrack: () => {}, resetAll: () => {},
   loadProject: async () => {},
+  updateProject: async () => {},
   projects: [],
 });
 
@@ -95,11 +97,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const loadProject = useCallback(async (project: any) => {
+    const parseDuration = (d: any): number => {
+      if (typeof d === 'number') return d;
+      if (typeof d === 'string') {
+        const parts = d.split(':');
+        if (parts.length === 2) {
+          return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
+        return parseInt(d) || 15;
+      }
+      return 15;
+    };
+
+    const videoDuration = parseDuration(project.duration);
     const mockVideo: VideoFile = {
-      url: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-12407-large.mp4',
+      url: project.url || 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-12407-large.mp4',
       name: project.name || 'My SyncTune Project',
-      size: 1024 * 1024 * 12,
-      duration: 15
+      size: typeof project.size === 'number' ? project.size : (parseInt(project.size) * 1024 * 1024 || 1024 * 1024 * 12),
+      duration: videoDuration
     };
 
     const meta = { uri: mockVideo.url, name: mockVideo.name, size: mockVideo.size, duration: mockVideo.duration };
@@ -111,7 +126,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const selected = selectTracks(fallback.classifiedMood, fallback.energyLevel);
     
     const allLoaded = await loadTracksMetadata(undefined);
-    const segments = [{ id: 'seg_1', startTime: 0, endTime: 15, duration: 15, mood: fallback.classifiedMood }];
+    const segments = [{ id: 'seg_1', startTime: 0, endTime: videoDuration, duration: videoDuration, mood: fallback.classifiedMood }];
     const assignments = [{ segment: segments[0], track: allLoaded[0] || matched[0] || selected[0], audioStartTime: 0 }];
 
     setState({
@@ -126,6 +141,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
       selectedTrackId: matched[0]?.id ?? null,
     });
   }, []);
+
+  const updateProject = useCallback(async (updatedProj: any) => {
+    const emailKey = user ? `synctune_projects_${user.email}` : 'synctune_projects_guest';
+    setProjects(prev => {
+      const idx = prev.findIndex(p => p.name === updatedProj.name);
+      let updatedList = [...prev];
+      if (idx !== -1) {
+        updatedList[idx] = { ...updatedList[idx], ...updatedProj };
+      } else {
+        const newProj = {
+          id: Date.now(),
+          name: updatedProj.name || 'My SyncTune Project',
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          mood: state.analysisResult?.classifiedMood || 'Cinematic',
+          status: 'Completed',
+          duration: state.video?.duration ? `${Math.floor(state.video.duration / 60)}:${Math.floor(state.video.duration % 60) < 10 ? '0' : ''}${Math.floor(state.video.duration % 60)}` : '0:15',
+          size: state.video?.size ? `${Math.round(state.video.size / 1024 / 1024)} MB` : '12 MB',
+          img: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=500&auto=format&fit=crop',
+          ...updatedProj
+        };
+        updatedList.unshift(newProj);
+      }
+      localStorage.setItem(emailKey, JSON.stringify(updatedList));
+      
+      const targetProj = idx !== -1 ? updatedList[idx] : updatedList[0];
+      if (user && user.id) {
+        fetch(`${API_URL}/api/projects`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, project: targetProj })
+        }).catch(err => console.error('Failed to sync updated project to backend:', err));
+      }
+      
+      return updatedList;
+    });
+  }, [user, state.video, state.analysisResult]);
 
   const setVideo = useCallback((v: VideoFile | null) =>
     setState(s => ({ ...s, video: v, analysisResult: null, matchedTracks: [], segmentAssignments: [], analysisError: null })), []);
@@ -183,15 +234,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Save project to localStorage & backend for persistence
       try {
         const emailKey = user ? `synctune_projects_${user.email}` : 'synctune_projects_guest';
+        const formatDuration = (secs: number) => {
+          const m = Math.floor(secs / 60);
+          const s = Math.floor(secs % 60);
+          return `${m}:${s < 10 ? '0' : ''}${s}`;
+        };
         const newProj = {
           id: Date.now(),
           name: video.name || 'My SyncTune Project',
           date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           mood: result.classifiedMood || 'Cinematic',
-          status: 'Completed',
-          duration: '0:15',
+          status: 'Draft',
+          duration: formatDuration(video.duration || 15),
           size: `${Math.round((video.size || 0) / 1024 / 1024)} MB`,
-          img: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=500&auto=format&fit=crop'
+          img: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=500&auto=format&fit=crop',
+          url: video.url
         };
         
         setProjects(prev => {
@@ -236,7 +293,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   return (
-    <AppCtx.Provider value={{ ...state, setVideo, setVideoDuration, setPrompt, runAnalysis, selectTrack, resetAll, loadProject, projects }}>
+    <AppCtx.Provider value={{ ...state, setVideo, setVideoDuration, setPrompt, runAnalysis, selectTrack, resetAll, loadProject, updateProject, projects }}>
       {children}
     </AppCtx.Provider>
   );

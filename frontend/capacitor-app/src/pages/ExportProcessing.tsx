@@ -5,11 +5,13 @@ import { MobileLayout } from '../components/SharedComponents';
 import { DownloadCloud } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { exportVideoWithBGM } from '../engine/audioExportEngine';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 
 export default function ExportProcessing() {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
-  const { video, matchedTracks, selectedTrackId, segmentAssignments } = useApp();
+  const { video, matchedTracks, selectedTrackId, segmentAssignments, updateProject } = useApp();
 
   useEffect(() => {
     let isCancelled = false;
@@ -63,8 +65,48 @@ export default function ExportProcessing() {
         const url = await exportVideoWithBGM(opts);
         
         if (!isCancelled) {
+          let finalVideoUrl = url;
+          if (Capacitor.isNativePlatform()) {
+            try {
+              setProgress(98);
+              const getBase64Data = async (blobUrl: string) => {
+                const response = await fetch(blobUrl);
+                const blob = await response.blob();
+                return new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    const result = reader.result as string;
+                    resolve(result.split(',')[1]);
+                  };
+                  reader.onerror = reject;
+                  reader.readAsDataURL(blob);
+                });
+              };
+              const base64Data = await getBase64Data(url);
+              const fileName = `synctune_proj_${Date.now()}.mp4`;
+              const savedFile = await Filesystem.writeFile({
+                path: fileName,
+                data: base64Data,
+                directory: Directory.Data
+              });
+              finalVideoUrl = Capacitor.convertFileSrc(savedFile.uri);
+            } catch (err) {
+              console.error('Failed to write exported video to Capacitor storage:', err);
+            }
+          }
+
+          try {
+            await updateProject({
+              name: video.name,
+              url: finalVideoUrl,
+              status: 'Completed'
+            });
+          } catch (err) {
+            console.error('Failed to update project status:', err);
+          }
+
           setProgress(100);
-          setTimeout(() => navigate('/export-success', { state: { videoUrl: url } }), 500);
+          setTimeout(() => navigate('/export-success', { state: { videoUrl: finalVideoUrl } }), 500);
         }
       } catch (err) {
         console.error('Export failed:', err);
