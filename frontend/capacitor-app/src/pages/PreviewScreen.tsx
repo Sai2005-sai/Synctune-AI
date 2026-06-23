@@ -145,7 +145,13 @@ export default function PreviewScreen() {
     }
   };
 
-  // Cleanup on unmount
+  // Cleanup on unmount & reload on URL change
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.load();
+    }
+  }, [video.url]);
+
   useEffect(() => {
     return () => { audioPlayerRef.current.dispose(); };
   }, []);
@@ -168,6 +174,7 @@ export default function PreviewScreen() {
         <div className="relative w-full bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl mb-6"
           style={{ aspectRatio: '16/9' }}>
           <video
+            key={video.url}
             ref={videoRef}
             src={video.url}
             className="w-full h-full object-contain"

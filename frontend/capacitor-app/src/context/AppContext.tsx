@@ -149,8 +149,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     
     const finalVideoUrl = isInvalidUrlForPlatform(project.url || '')
-      ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-      : (project.url || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
+      ? 'https://www.w3schools.com/html/mov_bbb.mp4'
+      : (project.url || 'https://www.w3schools.com/html/mov_bbb.mp4');
 
     const mockVideo: VideoFile = {
       url: finalVideoUrl,
