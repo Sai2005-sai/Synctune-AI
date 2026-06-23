@@ -202,17 +202,52 @@ app.post('/api/projects', async (req, res) => {
             targetUserId = userData.id;
         }
 
-        const { data, error } = await supabase
+        // Fetch existing CREATE_PROJECT activities to check if project exists
+        const { data: existingActivities, error: fetchError } = await supabase
             .from('activity')
-            .insert([{ user_id: targetUserId, action: 'CREATE_PROJECT', details: JSON.stringify(project) }])
-            .select();
+            .select('*')
+            .eq('user_id', targetUserId)
+            .eq('action', 'CREATE_PROJECT');
+
+        let existingRowId = null;
+        if (existingActivities && !fetchError) {
+            for (const act of existingActivities) {
+                try {
+                    const parsed = JSON.parse(act.details);
+                    if (parsed && (parsed.id === project.id || parsed.name === project.name)) {
+                        existingRowId = act.id;
+                        break;
+                    }
+                } catch (e) {}
+            }
+        }
+
+        let resultData, dbError;
+        if (existingRowId) {
+            // Update existing activity row
+            const { data, error } = await supabase
+                .from('activity')
+                .update({ details: JSON.stringify(project) })
+                .eq('id', existingRowId)
+                .select();
+            resultData = data;
+            dbError = error;
+        } else {
+            // Insert new activity row
+            const { data, error } = await supabase
+                .from('activity')
+                .insert([{ user_id: targetUserId, action: 'CREATE_PROJECT', details: JSON.stringify(project) }])
+                .select();
+            resultData = data;
+            dbError = error;
+        }
             
-        if (error) {
-            console.error('Save project error:', error);
+        if (dbError) {
+            console.error('Save project error:', dbError);
             return res.status(500).json({ error: 'Database error' });
         }
         
-        res.status(201).json({ message: 'Project saved successfully', project });
+        res.status(200).json({ message: 'Project saved successfully', project });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server error' });

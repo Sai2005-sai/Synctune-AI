@@ -99,7 +99,8 @@ export default function ExportProcessing() {
             await updateProject({
               name: video.name,
               url: finalVideoUrl,
-              status: 'Completed'
+              status: 'Completed',
+              selectedTrackId: selectedTrackId
             });
           } catch (err) {
             console.error('Failed to update project status:', err);
