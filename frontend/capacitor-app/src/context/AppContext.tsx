@@ -131,11 +131,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const videoDuration = parseDuration(project.duration);
     
-    const isLocalCapacitorPath = (urlStr: string) => {
-      return urlStr.startsWith('file://') || urlStr.includes('_capacitor_file_') || urlStr.startsWith('content://');
+    const isInvalidUrlForPlatform = (urlStr: string) => {
+      if (!urlStr) return true;
+      const isNative = Capacitor.isNativePlatform();
+      
+      // Blob URLs are invalid when restoring a project in a new session (whether on web or phone)
+      if (urlStr.startsWith('blob:')) return true;
+      
+      // Native paths are invalid on Web browser
+      if (!isNative && (urlStr.startsWith('file://') || urlStr.includes('_capacitor_file_') || urlStr.startsWith('content://'))) {
+        return true;
+      }
+      
+      return false;
     };
     
-    const finalVideoUrl = (isLocalCapacitorPath(project.url || '') && !Capacitor.isNativePlatform())
+    const finalVideoUrl = isInvalidUrlForPlatform(project.url || '')
       ? 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-12407-large.mp4'
       : (project.url || 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-12407-large.mp4');
 

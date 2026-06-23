@@ -35,7 +35,9 @@ export default function PreviewScreen() {
   if (!video) { return <Navigate to="/upload" replace />; }
 
   // Find selected track
-  const selectedTrack = ALL_TRACKS.find(t => t.id === selectedTrackId) ?? matchedTracks.find(t => t.id === selectedTrackId) ?? matchedTracks[0];
+  const selectedTrack = matchedTracks.find(t => t.id === selectedTrackId)
+    || ALL_TRACKS.find(t => t.id === selectedTrackId)
+    || matchedTracks[0];
 
   // Format mm:ss
   const fmt = (s: number) => {
