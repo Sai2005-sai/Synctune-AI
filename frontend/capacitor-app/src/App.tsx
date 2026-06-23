@@ -430,7 +430,7 @@ export function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
         <AppProvider>
-          <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <BrowserRouter basename={window.location.hostname.endsWith('github.io') ? '/Synctune-AI' : ''}>
             <AppContent />
           </BrowserRouter>
         </AppProvider>
