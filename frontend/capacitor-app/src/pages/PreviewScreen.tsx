@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { createAudioPlayer } from '../engine/audioPlayer';
+import { ALL_TRACKS } from '../data/musicLibrary';
 
 export default function PreviewScreen() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function PreviewScreen() {
   if (!video) { return <Navigate to="/upload" replace />; }
 
   // Find selected track
-  const selectedTrack = matchedTracks.find(t => t.id === selectedTrackId) ?? matchedTracks[0];
+  const selectedTrack = ALL_TRACKS.find(t => t.id === selectedTrackId) ?? matchedTracks.find(t => t.id === selectedTrackId) ?? matchedTracks[0];
 
   // Format mm:ss
   const fmt = (s: number) => {

@@ -7,6 +7,7 @@ import { useApp } from '../context/AppContext';
 import { exportVideoWithBGM } from '../engine/audioExportEngine';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
+import { ALL_TRACKS } from '../data/musicLibrary';
 
 export default function ExportProcessing() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function ExportProcessing() {
 
       try {
         const isLongVideo = (video?.duration ?? 0) > 300;
-        const selectedTrack = matchedTracks.find(t => t.id === selectedTrackId) ?? matchedTracks[0];
+        const selectedTrack = ALL_TRACKS.find(t => t.id === selectedTrackId) ?? matchedTracks.find(t => t.id === selectedTrackId) ?? matchedTracks[0];
 
         const resolveUri = (url: string): string => {
           if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
