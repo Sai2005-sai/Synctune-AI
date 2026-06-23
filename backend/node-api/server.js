@@ -10,7 +10,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'synctune_super_secret_key';
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
+
+const fs = require('fs');
+const path = require('path');
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
 
 // Routes
 app.get('/', (req, res) => {
@@ -253,7 +262,33 @@ app.post('/api/projects', async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
-
+app.post('/api/upload', async (req, res) => {
+    const { base64, filename } = req.body;
+    if (!base64 || !filename) {
+        return res.status(400).json({ error: 'Missing base64 or filename' });
+    }
+    try {
+        const fileBuffer = Buffer.from(base64, 'base64');
+        const ext = path.extname(filename) || '.mp4';
+        const uniqueName = `video_${Date.now()}_${Math.floor(Math.random() * 1000)}${ext}`;
+        const filePath = path.join(uploadsDir, uniqueName);
+        
+        fs.writeFileSync(filePath, fileBuffer);
+        
+        // Build the public URL. Render uses HTTPS, so req.protocol is usually correct
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+        const host = req.get('host');
+        const publicUrl = `${protocol}://${host}/uploads/${uniqueName}`;
+        
+        console.log('Saved uploaded video to:', filePath);
+        console.log('Public video URL:', publicUrl);
+        
+        res.status(200).json({ url: publicUrl });
+    } catch (err) {
+        console.error('Failed to write uploaded video:', err);
+        res.status(500).json({ error: 'Server failed to write file' });
+    }
+});
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

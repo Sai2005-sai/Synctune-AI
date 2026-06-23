@@ -66,6 +66,35 @@ const AppCtx = createContext<AppState & AppActions>({
 
 export const useApp = () => useContext(AppCtx);
 
+const uploadVideoToServer = async (videoUrl: string, name: string): Promise<string> => {
+  try {
+    const blob = await fetch(videoUrl).then(r => r.blob());
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        const base64Str = dataUrl.split(',')[1];
+        resolve(base64Str);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+    const res = await fetch(`${API_URL}/api/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base64, filename: name })
+    });
+    const data = await res.json();
+    if (data && data.url) {
+      return data.url;
+    }
+  } catch (err) {
+    console.error('Failed to upload video to server:', err);
+  }
+  return videoUrl;
+};
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(defaultState);
   const [projects, setProjects] = useState<any[]>([]);
@@ -296,6 +325,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const allLoaded: LoadedTrack[] = await loadTracksMetadata(undefined);
       const assignments = assignTracksToSegments(segments, allLoaded, video.duration);
 
+      // 7. Upload video to the server for cross-device persistence
+      let remoteVideoUrl = video.url;
+      try {
+        remoteVideoUrl = await uploadVideoToServer(video.url, video.name);
+      } catch (err) {
+        console.error('Video upload failed, falling back to local URL:', err);
+      }
+
       // Save project to localStorage & backend for persistence
       try {
         const emailKey = user ? `synctune_projects_${user.email}` : 'synctune_projects_guest';
@@ -313,7 +350,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           duration: formatDuration(video.duration || 15),
           size: `${Math.round((video.size || 0) / 1024 / 1024)} MB`,
           img: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=500&auto=format&fit=crop',
-          url: video.url,
+          url: remoteVideoUrl,
           selectedTrackId: matched[0]?.id || null
         };
         
@@ -335,8 +372,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       setState(s => ({
-        ...s, isAnalyzing: false, analysisResult: result,
-        matchedTracks: matched, selectedLocalTracks: selected,
+        ...s,
+        video: s.video ? { ...s.video, url: remoteVideoUrl } : null,
+        isAnalyzing: false,
+        analysisResult: result,
+        matchedTracks: matched,
+        selectedLocalTracks: selected,
         segmentAssignments: assignments,
         selectedTrackId: matched[0]?.id ?? null,
       }));
