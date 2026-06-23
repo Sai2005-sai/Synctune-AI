@@ -238,7 +238,12 @@ export default function PreviewScreen() {
       </div>
 
       <div className="mt-6 space-y-3">
-        <GradientButton onClick={() => navigate('/export-settings')} className="w-full">
+        <GradientButton onClick={async () => {
+          if (videoRef.current) videoRef.current.pause();
+          await audioPlayerRef.current.stop();
+          setIsPlaying(false);
+          navigate('/export-settings');
+        }} className="w-full">
           Export Video
         </GradientButton>
         <OutlinedButton onClick={() => { 

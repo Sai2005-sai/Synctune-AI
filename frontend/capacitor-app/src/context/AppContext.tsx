@@ -14,6 +14,7 @@ import { assignTracksToSegments, resetVariationHistory, SegmentAssignment } from
 import type { LocalTrack } from '../data/musicLibrary';
 import { useAuth } from './AuthContext';
 import { API_URL } from '../config';
+import { Capacitor } from '@capacitor/core';
 
 export interface VideoFile {
   url: string;
@@ -74,8 +75,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let localProjects = localSaved ? JSON.parse(localSaved) : [];
     setProjects(localProjects);
 
-    if (user && user.id) {
-      fetch(`${API_URL}/api/projects/${user.id}`)
+    if (user && (user.id || user.email)) {
+      const identifier = user.id || user.email;
+      fetch(`${API_URL}/api/projects/${identifier}`)
         .then(res => res.json())
         .then(dbProjects => {
           if (Array.isArray(dbProjects)) {
@@ -110,8 +112,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     const videoDuration = parseDuration(project.duration);
+    
+    const isLocalCapacitorPath = (urlStr: string) => {
+      return urlStr.startsWith('file://') || urlStr.includes('_capacitor_file_') || urlStr.startsWith('content://');
+    };
+    
+    const finalVideoUrl = (isLocalCapacitorPath(project.url || '') && !Capacitor.isNativePlatform())
+      ? 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-12407-large.mp4'
+      : (project.url || 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-12407-large.mp4');
+
     const mockVideo: VideoFile = {
-      url: project.url || 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-12407-large.mp4',
+      url: finalVideoUrl,
       name: project.name || 'My SyncTune Project',
       size: typeof project.size === 'number' ? project.size : (parseInt(project.size) * 1024 * 1024 || 1024 * 1024 * 12),
       duration: videoDuration
@@ -166,11 +177,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(emailKey, JSON.stringify(updatedList));
       
       const targetProj = idx !== -1 ? updatedList[idx] : updatedList[0];
-      if (user && user.id) {
+      if (user && (user.id || user.email)) {
         fetch(`${API_URL}/api/projects`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, project: targetProj })
+          body: JSON.stringify({ userId: user.id, email: user.email, project: targetProj })
         }).catch(err => console.error('Failed to sync updated project to backend:', err));
       }
       
@@ -257,11 +268,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return updated;
         });
 
-        if (user && user.id) {
+        if (user && (user.id || user.email)) {
           fetch(`${API_URL}/api/projects`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, project: newProj })
+            body: JSON.stringify({ userId: user.id, email: user.email, project: newProj })
           }).catch(err => console.error('Failed to sync project to backend:', err));
         }
       } catch (e) {

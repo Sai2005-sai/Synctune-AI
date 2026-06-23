@@ -349,7 +349,24 @@ export function matchBGM(
     matchScore: Math.round(scoreTrack(track, analysis, promptBoosts)),
   }));
 
-  return scored
-    .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, Math.min(topN, scored.length));
+  // Sort first
+  const sorted = scored.sort((a, b) => b.matchScore - a.matchScore);
+  
+  // Assign a normalized match percentage between 72% and 98%
+  const topScore = sorted[0]?.matchScore || 1;
+  const withPercentage = sorted.map((t, idx) => {
+    let displayPercent = 98 - idx * 4; // realistic drop
+    if (topScore > 0) {
+      const scoreRatio = t.matchScore / topScore;
+      displayPercent = Math.round(75 + scoreRatio * 23);
+    }
+    // Bound it between 72% and 98%
+    displayPercent = Math.max(72, Math.min(98, displayPercent));
+    return {
+      ...t,
+      matchScore: displayPercent
+    };
+  });
+  
+  return withPercentage.slice(0, Math.min(topN, withPercentage.length));
 }

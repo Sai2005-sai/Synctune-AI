@@ -19,7 +19,7 @@ export default function RecommendedTracks() {
   const displayed = activeFilter === 'Best Match'
     ? matchedTracks
     : ALL_TRACKS.filter(t => t.mood?.toLowerCase() === activeFilter.toLowerCase())
-        .map(t => ({ ...t, matchScore: t.mood?.toLowerCase() === activeFilter.toLowerCase() ? 100 : 0 }));
+        .map((t, idx) => ({ ...t, matchScore: Math.max(75, 96 - idx * 3) }));
 
   const handlePlay = async (track: typeof matchedTracks[0]) => {
     if (playingId === track.id) {
@@ -59,7 +59,7 @@ export default function RecommendedTracks() {
       <div className="sticky top-0 z-20 bg-dark-bg/90 backdrop-blur-xl px-6 py-4 border-b border-white/10">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)}
+            <button onClick={async () => { await playerRef.current.stop(); navigate(-1); }}
               className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors">
               <ArrowLeft size={20} />
             </button>
@@ -97,7 +97,12 @@ export default function RecommendedTracks() {
                 <span className="text-2xl">{track.mood === 'happy' ? '☀️' : track.mood === 'sad' ? '🌧' : track.mood === 'energetic' ? '⚡' : track.mood === 'cinematic' ? '🎬' : '🎵'}</span>
               </button>
 
-              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => { selectTrack(track.id); navigate('/track-details'); }}>
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={async () => {
+                await playerRef.current.stop();
+                setPlayingId(null);
+                selectTrack(track.id);
+                navigate('/track-details');
+              }}>
                 <h3 className="font-medium text-white text-sm truncate">{track.title}</h3>
                 <p className="text-text-secondary text-xs truncate capitalize">{track.mood}</p>
                 <div className="flex items-center gap-2 mt-1.5">
@@ -110,7 +115,12 @@ export default function RecommendedTracks() {
                 <div className="text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 px-2 py-0.5 rounded-full border border-accent-cyan/20">
                   {Math.round(track.matchScore)}% Match
                 </div>
-                <button onClick={() => { selectTrack(track.id); navigate('/preview'); }}
+                <button onClick={async () => {
+                  await playerRef.current.stop();
+                  setPlayingId(null);
+                  selectTrack(track.id);
+                  navigate('/preview');
+                }}
                   className="bg-gradient-accent text-white text-xs font-medium px-4 py-1.5 rounded-full hover:scale-105 transition-transform">
                   Apply
                 </button>

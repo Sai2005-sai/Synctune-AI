@@ -40,7 +40,7 @@ export default function AnalysisSummary() {
   return (
     <MobileLayout hideNav className="flex flex-col px-6 py-8">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate(-1)}
+        <button onClick={() => navigate('/prompt-input')}
           className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors">
           <ArrowLeft size={20} />
         </button>

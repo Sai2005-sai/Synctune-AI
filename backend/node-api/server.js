@@ -140,9 +140,22 @@ app.post('/api/auth/check-user', async (req, res) => {
     }
 });
 
-app.get('/api/projects/:userId', async (req, res) => {
-    const { userId } = req.params;
+app.get('/api/projects/:userIdentifier', async (req, res) => {
+    const { userIdentifier } = req.params;
     try {
+        let userId = userIdentifier;
+        if (userIdentifier.includes('@')) {
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', userIdentifier)
+                .single();
+            if (userError || !userData) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            userId = userData.id;
+        }
+
         const { data, error } = await supabase
             .from('activity')
             .select('*')
@@ -171,13 +184,27 @@ app.get('/api/projects/:userId', async (req, res) => {
 });
 
 app.post('/api/projects', async (req, res) => {
-    const { userId, project } = req.body;
-    if (!userId || !project) return res.status(400).json({ error: 'User ID and project details required' });
+    const { userId, email, project } = req.body;
+    if (!userId && !email) return res.status(400).json({ error: 'User ID or Email is required' });
+    if (!project) return res.status(400).json({ error: 'Project details required' });
     
     try {
+        let targetUserId = userId;
+        if (!targetUserId && email) {
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', email)
+                .single();
+            if (userError || !userData) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            targetUserId = userData.id;
+        }
+
         const { data, error } = await supabase
             .from('activity')
-            .insert([{ user_id: userId, action: 'CREATE_PROJECT', details: JSON.stringify(project) }])
+            .insert([{ user_id: targetUserId, action: 'CREATE_PROJECT', details: JSON.stringify(project) }])
             .select();
             
         if (error) {
