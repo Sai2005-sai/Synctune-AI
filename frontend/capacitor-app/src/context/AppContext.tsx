@@ -147,8 +147,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     
     const finalVideoUrl = isInvalidUrlForPlatform(project.url || '')
-      ? 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-12407-large.mp4'
-      : (project.url || 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-12407-large.mp4');
+      ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
+      : (project.url || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
 
     const mockVideo: VideoFile = {
       url: finalVideoUrl,
