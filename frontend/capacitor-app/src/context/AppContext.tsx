@@ -45,6 +45,7 @@ interface AppActions {
   loadProject: (project: any) => Promise<void>;
   updateProject: (project: any) => Promise<void>;
   projects: any[];
+  linkLocalVideo: (url: string) => void;
 }
 
 const defaultState: AppState = {
@@ -60,6 +61,7 @@ const AppCtx = createContext<AppState & AppActions>({
   loadProject: async () => {},
   updateProject: async () => {},
   projects: [],
+  linkLocalVideo: () => {},
 });
 
 export const useApp = () => useContext(AppCtx);
@@ -251,6 +253,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(defaultState);
   }, []);
 
+  const linkLocalVideo = useCallback((url: string) => {
+    setState(s => ({
+      ...s,
+      video: s.video ? { ...s.video, url } : null
+    }));
+  }, []);
+
   const runAnalysis = useCallback(async () => {
     const { video, prompt } = state;
     if (!video || !video.duration) return;
@@ -350,7 +359,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   return (
-    <AppCtx.Provider value={{ ...state, setVideo, setVideoDuration, setPrompt, runAnalysis, selectTrack, resetAll, loadProject, updateProject, projects }}>
+    <AppCtx.Provider value={{ ...state, setVideo, setVideoDuration, setPrompt, runAnalysis, selectTrack, resetAll, loadProject, updateProject, projects, linkLocalVideo }}>
       {children}
     </AppCtx.Provider>
   );

@@ -14,6 +14,8 @@ import {
   Maximize2,
   Volume2,
   Edit2,
+  Link2,
+  AlertCircle,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { createAudioPlayer } from '../engine/audioPlayer';
@@ -21,11 +23,21 @@ import { ALL_TRACKS } from '../data/musicLibrary';
 
 export default function PreviewScreen() {
   const navigate = useNavigate();
-  const { video, matchedTracks, selectedTrackId, segmentAssignments } = useApp();
-
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const { video, matchedTracks, selectedTrackId, segmentAssignments, linkLocalVideo } = useApp();
+
+  const isFallbackVideo = video?.url?.includes('mov_bbb.mp4') || false;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLinkLocalFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const localUrl = URL.createObjectURL(file);
+      linkLocalVideo(localUrl);
+    }
+  };
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioPlayerRef = useRef(createAudioPlayer());
 
@@ -185,10 +197,34 @@ export default function PreviewScreen() {
             muted={true}
           />
 
+          {isFallbackVideo && (
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-20">
+              <AlertCircle size={28} className="text-accent-cyan mb-2" />
+              <p className="text-white text-xs font-semibold mb-1">Media Offline on Web</p>
+              <p className="text-text-secondary text-[10px] max-w-[240px] leading-relaxed mb-3">
+                This project's video file is stored locally on your mobile phone.
+              </p>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-cyan/20 border border-accent-cyan/40 text-accent-cyan text-xs font-semibold hover:bg-accent-cyan/35 transition-colors"
+              >
+                <Link2 size={12} />
+                Link Local Video File
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleLinkLocalFile}
+                className="hidden"
+              />
+            </div>
+          )}
+
           {/* Fullscreen button */}
           <button
             onClick={handleFullscreen}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/70 transition-colors">
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/70 transition-colors z-30">
             <Maximize2 size={14} />
           </button>
 
