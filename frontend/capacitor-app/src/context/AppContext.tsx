@@ -138,9 +138,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Blob URLs are invalid when restoring a project in a new session (whether on web or phone)
       if (urlStr.startsWith('blob:')) return true;
       
-      // Native paths are invalid on Web browser
-      if (!isNative && (urlStr.startsWith('file://') || urlStr.includes('_capacitor_file_') || urlStr.startsWith('content://'))) {
-        return true;
+      // On web, if the URL is not a web url (http/https), it's invalid (e.g. C:/ local paths, content://, file://)
+      if (!isNative) {
+        if (!urlStr.startsWith('http://') && !urlStr.startsWith('https://')) {
+          return true;
+        }
       }
       
       return false;
