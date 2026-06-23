@@ -13,6 +13,7 @@ import {
   ChevronRight } from
 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -56,14 +57,7 @@ export default function Profile() {
     color: 'text-accent-purple'
   }];
 
-  const projects = (() => {
-    try {
-      const saved = localStorage.getItem('synctune_projects');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  })();
+  const { projects } = useApp();
 
   const completedProjects = projects.filter((p: any) => p.status === 'Completed');
 

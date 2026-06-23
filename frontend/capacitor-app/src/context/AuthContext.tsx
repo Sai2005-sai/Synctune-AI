@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
+  id?: number;
   email: string;
   name: string;
   photo?: string;
@@ -8,7 +9,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, name?: string, photo?: string) => void;
+  login: (email: string, name?: string, photo?: string, id?: number) => void;
   logout: () => void;
   updateProfile: (name: string, photo?: string) => void;
   isLoading: boolean;
@@ -33,8 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = (email: string, name = 'SyncTune User', photo?: string) => {
-    const newUser = { email, name, photo };
+  const login = (email: string, name = 'SyncTune User', photo?: string, id?: number) => {
+    const newUser = { id, email, name, photo };
     setUser(newUser);
     localStorage.setItem('synctune_user', JSON.stringify(newUser));
     if (email && (email.includes('selenium') || email.includes('test') || email === 'saisr3058@gmail.com')) {

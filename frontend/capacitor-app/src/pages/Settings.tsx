@@ -34,7 +34,10 @@ export default function Settings() {
     const savedCache = localStorage.getItem('synctune_cache_size');
     if (savedCache) return savedCache;
     // Generate dynamic mock size based on projects count
-    const saved = localStorage.getItem('synctune_projects');
+    const storedUser = localStorage.getItem('synctune_user');
+    const email = storedUser ? JSON.parse(storedUser).email : null;
+    const emailKey = email ? `synctune_projects_${email}` : 'synctune_projects_guest';
+    const saved = localStorage.getItem(emailKey);
     const projCount = saved ? JSON.parse(saved).length : 0;
     return `${(12.4 + projCount * 8.5).toFixed(1)} MB`;
   });

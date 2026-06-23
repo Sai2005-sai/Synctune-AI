@@ -20,14 +20,8 @@ export default function HomeDashboard() {
     { id: 2, title: 'Export Ready', desc: 'Your cinematic video project is ready for download.', time: '2 hours ago' }
   ]);
 
-  const recentProjects = (() => {
-    try {
-      const saved = localStorage.getItem('synctune_projects');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  })();
+  const { projects } = useApp();
+  const recentProjects = projects.slice(0, 3);
 
   return (
     <MobileLayout className="px-6 pt-12 pb-24">

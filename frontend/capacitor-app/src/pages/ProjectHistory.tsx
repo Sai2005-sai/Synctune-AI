@@ -16,14 +16,7 @@ export default function ProjectHistory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchInput, setShowSearchInput] = useState(false);
   
-  const projects = (() => {
-    try {
-      const saved = localStorage.getItem('synctune_projects');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  })();
+  const { projects } = useApp();
 
   const filteredProjects = projects.filter((p: any) => {
     const matchesTab = activeTab === 'All' || p.status === activeTab || (activeTab === 'In Progress' && p.status === 'Draft');

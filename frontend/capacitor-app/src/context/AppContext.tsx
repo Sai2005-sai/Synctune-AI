@@ -2,7 +2,7 @@
  * AppContext.tsx — Global state for SyncTune AI web app
  * Correct function signatures from engine files.
  */
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { analyzeFrames } from '../engine/frameAnalyzer';
 import { buildAnalysisResult, analyzeVideoFallback, VideoAnalysisResult, VideoMetadata } from '../engine/videoAnalyzer';
 import { classify } from '../engine/classifier';
@@ -12,6 +12,8 @@ import { loadTracksMetadata, LoadedTrack } from '../engine/musicLoader';
 import { computeSegments } from '../engine/videoSegmenter';
 import { assignTracksToSegments, resetVariationHistory, SegmentAssignment } from '../engine/audioVariationEngine';
 import type { LocalTrack } from '../data/musicLibrary';
+import { useAuth } from './AuthContext';
+import { API_URL } from '../config';
 
 export interface VideoFile {
   url: string;
@@ -40,6 +42,7 @@ interface AppActions {
   selectTrack: (id: string) => void;
   resetAll: () => void;
   loadProject: (project: any) => Promise<void>;
+  projects: any[];
 }
 
 const defaultState: AppState = {
@@ -53,12 +56,43 @@ const AppCtx = createContext<AppState & AppActions>({
   setVideo: () => {}, setVideoDuration: () => {}, setPrompt: () => {},
   runAnalysis: async () => {}, selectTrack: () => {}, resetAll: () => {},
   loadProject: async () => {},
+  projects: [],
 });
 
 export const useApp = () => useContext(AppCtx);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(defaultState);
+  const [projects, setProjects] = useState<any[]>([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const emailKey = user ? `synctune_projects_${user.email}` : 'synctune_projects_guest';
+    const localSaved = localStorage.getItem(emailKey);
+    let localProjects = localSaved ? JSON.parse(localSaved) : [];
+    setProjects(localProjects);
+
+    if (user && user.id) {
+      fetch(`${API_URL}/api/projects/${user.id}`)
+        .then(res => res.json())
+        .then(dbProjects => {
+          if (Array.isArray(dbProjects)) {
+            const merged = [...dbProjects];
+            localProjects.forEach((lp: any) => {
+              if (!merged.some(dp => dp.id === lp.id || dp.name === lp.name)) {
+                merged.push(lp);
+              }
+            });
+            merged.sort((a, b) => b.id - a.id);
+            localStorage.setItem(emailKey, JSON.stringify(merged));
+            setProjects(merged);
+          }
+        })
+        .catch(err => console.error('Failed to sync projects from backend:', err));
+    } else if (!user) {
+      setProjects([]);
+    }
+  }, [user]);
 
   const loadProject = useCallback(async (project: any) => {
     const mockVideo: VideoFile = {
@@ -146,10 +180,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const allLoaded: LoadedTrack[] = await loadTracksMetadata(undefined);
       const assignments = assignTracksToSegments(segments, allLoaded, video.duration);
 
-      // Save project to localStorage for persistence
+      // Save project to localStorage & backend for persistence
       try {
-        const saved = localStorage.getItem('synctune_projects');
-        const projList = saved ? JSON.parse(saved) : [];
+        const emailKey = user ? `synctune_projects_${user.email}` : 'synctune_projects_guest';
         const newProj = {
           id: Date.now(),
           name: video.name || 'My SyncTune Project',
@@ -160,9 +193,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           size: `${Math.round((video.size || 0) / 1024 / 1024)} MB`,
           img: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=500&auto=format&fit=crop'
         };
-        if (!projList.some((p: any) => p.name === newProj.name)) {
-          projList.unshift(newProj);
-          localStorage.setItem('synctune_projects', JSON.stringify(projList));
+        
+        setProjects(prev => {
+          const updated = [newProj, ...prev.filter(p => p.name !== newProj.name)];
+          localStorage.setItem(emailKey, JSON.stringify(updated));
+          return updated;
+        });
+
+        if (user && user.id) {
+          fetch(`${API_URL}/api/projects`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, project: newProj })
+          }).catch(err => console.error('Failed to sync project to backend:', err));
         }
       } catch (e) {
         console.error('Failed to save project:', e);
@@ -193,7 +236,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   return (
-    <AppCtx.Provider value={{ ...state, setVideo, setVideoDuration, setPrompt, runAnalysis, selectTrack, resetAll, loadProject }}>
+    <AppCtx.Provider value={{ ...state, setVideo, setVideoDuration, setPrompt, runAnalysis, selectTrack, resetAll, loadProject, projects }}>
       {children}
     </AppCtx.Provider>
   );

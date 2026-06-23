@@ -32,7 +32,7 @@ export default function Register() {
       
       // Successfully registered via backend
       localStorage.setItem('synctune_token', data.token);
-      login(email, name);
+      login(data.user.email, data.user.name, data.user.photo, data.user.id);
       navigate('/home');
     } catch (err) {
       console.error(err);

@@ -55,7 +55,7 @@ export default function SignIn() {
       }
       
       localStorage.setItem('synctune_token', data.token);
-      login(data.user.email, data.user.name);
+      login(data.user.email, data.user.name, data.user.photo, data.user.id);
       navigate('/home');
     } catch (err) {
       console.error(err);

@@ -140,6 +140,58 @@ app.post('/api/auth/check-user', async (req, res) => {
     }
 });
 
+app.get('/api/projects/:userId', async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const { data, error } = await supabase
+            .from('activity')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('action', 'CREATE_PROJECT')
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error('Fetch projects error:', error);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        const projects = data.map(item => {
+            try {
+                return JSON.parse(item.details);
+            } catch (e) {
+                return null;
+            }
+        }).filter(p => p !== null);
+        
+        res.json(projects);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.post('/api/projects', async (req, res) => {
+    const { userId, project } = req.body;
+    if (!userId || !project) return res.status(400).json({ error: 'User ID and project details required' });
+    
+    try {
+        const { data, error } = await supabase
+            .from('activity')
+            .insert([{ user_id: userId, action: 'CREATE_PROJECT', details: JSON.stringify(project) }])
+            .select();
+            
+        if (error) {
+            console.error('Save project error:', error);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        res.status(201).json({ message: 'Project saved successfully', project });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
