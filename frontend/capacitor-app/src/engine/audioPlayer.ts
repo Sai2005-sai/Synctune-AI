@@ -1,187 +1,172 @@
 /**
  * audioPlayer.ts
  *
- * Cross-platform audio player with a single consistent interface.
- *
- * WEB    → HTMLAudioElement (native browser API — guaranteed to work,
- *           no bower autoplay blocks because we call .play() inside a
- *           user-event handler, and volume fades work via .volume property)
- *
- * NATIVE → expo-av Audio.Sound (no changes needed on native)
- *
- * WHY not expo-av on web?
- *   expo-av's web wrapper does not always initialise the Web Audio API
- *   context correctly when assets are served from Metro bundler query-param
- *   URLs. The raw HTMLAudioElement has no such issues.
+ * Fast, reliable HTML5 audio streaming player with instant playback,
+ * smooth volume control, precise seeking, and zero-leakage pausing.
  */
 
-// Web-only build
-const Platform = { OS: 'web' as const };
-
 export interface IAudioPlayer {
-  /** Load URI and start playback. offsetSec = start offset in the track. */
   play(uri: string, offsetSec?: number, initialVolume?: number): Promise<void>;
-  /** Smoothly change volume (0–1). */
   setVolume(volume: number): Promise<void>;
-  /** Pause without unloading. */
   pause(): Promise<void>;
-  /** Resume after pause. */
   resume(): Promise<void>;
-  /** Stop playback and unload. */
+  seek(offsetSec: number): Promise<void>;
   stop(): Promise<void>;
-  /** Whether the player is currently producing audio. */
   isPlaying(): boolean;
-  /** Callback invoked when natural playback finishes. */
   setOnEnded(cb: () => void): void;
-  /** Free all resources. */
   dispose(): void;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Web: Web Audio API (AudioContext)
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Shared AudioContext for the entire app. It bypasses Autoplay policies once 
-// the user has interacted with the document.
-let sharedAudioCtx: AudioContext | null = null;
-const audioBufferCache = new Map<string, AudioBuffer>();
-
-function getAudioContext(): AudioContext {
-  if (!sharedAudioCtx) {
-    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-    sharedAudioCtx = new Ctx();
+export function resolveAudioUri(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
   }
-  return sharedAudioCtx;
+  const clean = url.startsWith('/') ? url : '/' + url;
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io')) {
+    return '/Synctune-AI' + clean;
+  }
+  return clean;
 }
 
-class WebAudioPlayer implements IAudioPlayer {
-  private source: AudioBufferSourceNode | null = null;
-  private gainNode: GainNode | null = null;
-  private _playing = false;
-  private _onEnded?: () => void;
-  private _uri = '';
-  private _startTimeContext = 0;
-  private _offsetSec = 0;
+// Track globally active audio elements so that starting any new track
+// immediately stops any previously playing audio across the whole app.
+const activeAudioInstances = new Set<HTMLAudioElement>();
 
-  async play(uri: string, offsetSec = 0, initialVolume = 1.0): Promise<void> {
-    await this.stop();
-    
-    // Resolve URI relative to Vite base path (e.g. /Synctune-AI/ for GitHub Pages)
-    const resolvedUri = (function resolveUri(url: string): string {
-      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
-        return url;
-      }
-      const baseUrl = import.meta.env.BASE_URL || '/';
-      const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
-      const cleanUri = url.startsWith('/') ? url.slice(1) : url;
-      const baseSubfolderName = cleanBase.replace(/^\/|\/$/g, '');
-      if (baseSubfolderName && cleanUri.startsWith(baseSubfolderName)) {
-        return '/' + cleanUri;
-      }
-      return cleanBase + cleanUri;
-    })(uri);
+export function stopAllGlobalAudio(): void {
+  activeAudioInstances.forEach(audio => {
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+    } catch {}
+  });
+  activeAudioInstances.clear();
+}
 
-    this._uri = uri;
-    this._offsetSec = offsetSec;
-    
-    const ctx = getAudioContext();
-    if (ctx.state === 'suspended') {
-      await ctx.resume();
+class HTML5AudioPlayer implements IAudioPlayer {
+  private audio: HTMLAudioElement | null = null;
+  private onEndedCallback: (() => void) | null = null;
+  private currentUri = '';
+  private isDisposed = false;
+
+  private getAudio(): HTMLAudioElement {
+    if (!this.audio) {
+      this.audio = new Audio();
+      this.audio.preload = 'auto';
+      
+      this.audio.addEventListener('ended', () => {
+        if (this.onEndedCallback) {
+          this.onEndedCallback();
+        }
+      });
+
+      this.audio.addEventListener('error', (e) => {
+        console.warn('[HTML5AudioPlayer] playback error:', this.audio?.src, e);
+      });
     }
-
-    // Load and decode buffer (with caching so crossfades are instant)
-    let buffer = audioBufferCache.get(resolvedUri);
-    if (!buffer) {
-      try {
-        const resp = await fetch(resolvedUri);
-        const arrayBuf = await resp.arrayBuffer();
-        buffer = await ctx.decodeAudioData(arrayBuf);
-        audioBufferCache.set(resolvedUri, buffer);
-      } catch (err) {
-        console.warn('[WebAudioPlayer] fetch/decode failed for URI:', resolvedUri, err);
-        throw err;
-      }
-    }
-
-    this.source = ctx.createBufferSource();
-    this.source.buffer = buffer;
-    
-    this.gainNode = ctx.createGain();
-    this.gainNode.gain.setValueAtTime(Math.max(0, Math.min(1, initialVolume)), ctx.currentTime);
-    
-    this.source.connect(this.gainNode);
-    this.gainNode.connect(ctx.destination);
-
-    this.source.onended = () => {
-      // onended fires when buffer completes or stop() is called.
-      if (this._playing) {
-        this._playing = false;
-        this._onEnded?.();
-      }
-    };
-
-    this.source.start(0, offsetSec);
-    this._startTimeContext = ctx.currentTime;
-    this._playing = true;
+    return this.audio;
   }
 
-  async setVolume(v: number): Promise<void> {
-    if (this.gainNode) {
-      const ctx = getAudioContext();
-      // Ramp smoothly over 50ms to prevent clicking
-      this.gainNode.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), ctx.currentTime, 0.05);
+  async play(uri: string, offsetSec = 0, initialVolume = 1.0): Promise<void> {
+    if (this.isDisposed || !uri) return;
+
+    const audio = this.getAudio();
+    const resolved = resolveAudioUri(uri);
+
+    // Stop all other audio instances so only ONE track plays at a time
+    activeAudioInstances.forEach(other => {
+      if (other !== audio) {
+        try {
+          other.pause();
+        } catch {}
+      }
+    });
+
+    try {
+      if (this.currentUri !== resolved || audio.src !== resolved) {
+        audio.src = resolved;
+        this.currentUri = resolved;
+        audio.load();
+      }
+
+      audio.volume = Math.max(0, Math.min(1, initialVolume));
+
+      if (offsetSec > 0) {
+        try {
+          audio.currentTime = offsetSec;
+        } catch {}
+      }
+
+      activeAudioInstances.add(audio);
+      await audio.play();
+    } catch (err: any) {
+      // Ignore AbortError caused by quick play/pause toggles
+      if (err.name !== 'AbortError') {
+        console.warn('[HTML5AudioPlayer] play failed:', err);
+      }
+    }
+  }
+
+  async setVolume(volume: number): Promise<void> {
+    if (this.audio) {
+      this.audio.volume = Math.max(0, Math.min(1, volume));
     }
   }
 
   async pause(): Promise<void> {
-    if (this._playing && this.source) {
-      try { this.source.stop(); } catch {}
-      const ctx = getAudioContext();
-      this._offsetSec += (ctx.currentTime - this._startTimeContext);
-      this._playing = false;
-      this.source.disconnect();
-      this.source = null;
+    if (this.audio) {
+      try {
+        this.audio.pause();
+      } catch {}
     }
   }
 
   async resume(): Promise<void> {
-    if (!this._playing && this._uri) {
-      await this.play(this._uri, this._offsetSec, this.gainNode?.gain.value ?? 1.0);
+    if (this.audio && this.audio.paused && this.currentUri) {
+      try {
+        await this.audio.play();
+        activeAudioInstances.add(this.audio);
+      } catch {}
+    }
+  }
+
+  async seek(offsetSec: number): Promise<void> {
+    if (this.audio) {
+      try {
+        this.audio.currentTime = Math.max(0, offsetSec);
+      } catch {}
     }
   }
 
   async stop(): Promise<void> {
-    if (this.source) {
-      try { this.source.stop(); } catch {}
-      this.source.disconnect();
-      this.source = null;
+    if (this.audio) {
+      try {
+        this.audio.pause();
+        this.audio.currentTime = 0;
+      } catch {}
+      activeAudioInstances.delete(this.audio);
     }
-    if (this.gainNode) {
-      this.gainNode.disconnect();
-      this.gainNode = null;
-    }
-    this._playing = false;
-    this._offsetSec = 0;
   }
 
   isPlaying(): boolean {
-    return this._playing;
+    return Boolean(this.audio && !this.audio.paused && !this.audio.ended);
   }
 
   setOnEnded(cb: () => void): void {
-    this._onEnded = cb;
+    this.onEndedCallback = cb;
   }
 
   dispose(): void {
+    this.isDisposed = true;
     this.stop().catch(() => {});
+    if (this.audio) {
+      this.audio.src = '';
+      this.audio = null;
+    }
+    this.onEndedCallback = null;
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Factory — web-only always uses WebAudioPlayer
-// ─────────────────────────────────────────────────────────────────────────────
-
 export function createAudioPlayer(): IAudioPlayer {
-  return new WebAudioPlayer();
+  return new HTML5AudioPlayer();
 }
-

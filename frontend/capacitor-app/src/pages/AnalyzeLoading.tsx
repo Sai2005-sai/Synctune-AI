@@ -5,48 +5,54 @@ import { MobileLayout, AILoader } from '../components/SharedComponents';
 import { useApp } from '../context/AppContext';
 
 const STEPS = [
-  'Extracting frames...',
-  'Analyzing visual mood...',
-  'Measuring motion energy...',
-  'Detecting scene cuts...',
-  'Matching background music...',
+  'Extracting visual frames...',
+  'Analyzing visual mood & lighting...',
+  'Measuring motion & pacing...',
+  'Detecting scene transitions...',
+  'Matching beat & soundtrack...',
 ];
 
 export default function AnalyzeLoading() {
   const navigate = useNavigate();
   const { isAnalyzing, analysisResult, analysisError } = useApp();
   const [stepIdx, setStepIdx] = React.useState(0);
-  const [progress, setProgress] = React.useState(0);
+  const [progress, setProgress] = React.useState(12);
 
-  // Animate progress bar while analyzing
+  // Animate progress bar smoothly and dynamically
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => {
-        // Cap at 90% until real result arrives
-        if (prev >= 90 && isAnalyzing) return 90;
-        if (prev >= 100) { clearInterval(interval); return 100; }
-        return prev + 1;
+        if (!isAnalyzing) return 100;
+        if (prev < 45) return prev + 4;
+        if (prev < 75) return prev + 2;
+        if (prev < 94) return prev + 1;
+        return 95;
       });
-    }, 80);
+    }, 70);
+
     const stepInterval = setInterval(() => {
       setStepIdx(i => (i + 1) % STEPS.length);
-    }, 1500);
-    return () => { clearInterval(interval); clearInterval(stepInterval); };
+    }, 750);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(stepInterval);
+    };
   }, [isAnalyzing]);
 
-  // When analysis finishes, complete progress and navigate
+  // When analysis finishes, smoothly jump to 100% and proceed
   useEffect(() => {
-    if (!isAnalyzing && analysisResult) {
+    if (!isAnalyzing && (analysisResult || analysisError)) {
       setProgress(100);
-      setTimeout(() => navigate('/analysis-summary'), 500);
-    }
-    if (!isAnalyzing && analysisError) {
-      setTimeout(() => navigate('/analysis-summary'), 500);
+      const timer = setTimeout(() => {
+        navigate('/analysis-summary');
+      }, 450);
+      return () => clearTimeout(timer);
     }
   }, [isAnalyzing, analysisResult, analysisError, navigate]);
 
   return (
-    <MobileLayout hideNav className="flex flex-col items-center justify-center relative">
+    <MobileLayout hideNav className="flex flex-col items-center justify-center relative px-6 pb-16">
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {Array.from({ length: 20 }).map((_, i) => (
@@ -59,17 +65,17 @@ export default function AnalyzeLoading() {
         ))}
       </div>
 
-      <div className="relative z-10 w-full px-8 flex flex-col items-center">
+      <div className="relative z-10 w-full px-4 flex flex-col items-center">
         <AILoader text={STEPS[stepIdx]} />
 
-        <div className="w-full max-w-[240px] mt-12">
-          <div className="flex justify-between text-xs font-medium text-text-secondary mb-2">
+        <div className="w-full max-w-[260px] mt-12">
+          <div className="flex justify-between text-xs font-semibold text-text-secondary mb-2">
             <span>Progress</span>
-            <span className="text-accent-cyan">{progress}%</span>
+            <span className="text-accent-cyan font-bold">{progress}%</span>
           </div>
-          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/10">
+          <div className="h-2.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/10 p-0.5">
             <motion.div
-              className="h-full bg-gradient-accent"
+              className="h-full bg-gradient-accent rounded-full transition-all duration-150"
               style={{ width: `${progress}%` }}
               layout
             />

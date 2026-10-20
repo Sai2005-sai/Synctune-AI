@@ -21,7 +21,7 @@ export interface FrameAnalysisResult {
   trueDurationSeconds?: number;    // Extracted directly from DOM/Native if available
 }
 
-const SAMPLE_COUNT = 10;           // number of frames to sample
+const SAMPLE_COUNT = 5;           // number of frames to sample (fast & lightweight)
 const SCENE_CUT_THRESHOLD = 0.28; // frame-diff > this → scene cut
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -158,12 +158,12 @@ function analyzeFramesWeb(
       video.currentTime = actualDuration * 0.05;
     };
 
-    // Timeout guard in case seeking stalls
+    // Timeout guard in case seeking stalls (fallback safely after 4s)
     setTimeout(() => {
       if (captures.length < 2) {
         reject(new Error('Frame analysis timed out'));
       }
-    }, 30_000);
+    }, 4_000);
   });
 }
 

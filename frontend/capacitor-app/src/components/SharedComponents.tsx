@@ -6,22 +6,16 @@ export const MobileLayout = ({
   children,
   className = '',
   hideNav = false
-
-
-
-
 }: {children: React.ReactNode;className?: string;hideNav?: boolean;}) => {
   return (
     <div className="w-full min-h-screen bg-dark-bg flex justify-center overflow-hidden">
       <div
-        className={`w-full max-w-[390px] md:max-w-3xl lg:max-w-5xl min-h-screen bg-dark-bg relative shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-y-auto overflow-x-hidden md:border-x md:border-white/5 ${!hideNav ? 'md:pt-20' : ''} ${className}`}>
-        
+        className={`w-full max-w-md md:max-w-3xl lg:max-w-5xl min-h-screen bg-dark-bg relative shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-y-auto overflow-x-hidden md:border-x md:border-white/5 ${!hideNav ? 'md:pt-20' : ''} ${className}`}>
         {children}
-        {!hideNav && <div className="h-24 md:hidden" />} {/* Spacer for bottom nav */}
+        {!hideNav && <div className="h-28 md:hidden" />} {/* Generous spacer for bottom nav */}
         {!hideNav && <BottomNav />}
       </div>
     </div>);
-
 };
 export const GlassCard = ({
   children,
@@ -103,7 +97,7 @@ export const BottomNav = () => {
   }];
 
   return (
-    <div className="fixed bottom-0 md:top-0 md:bottom-auto w-full max-w-[390px] md:max-w-3xl lg:max-w-5xl h-20 md:h-20 glass-card rounded-t-3xl md:rounded-none border-b-0 md:border-b md:border-white/10 border-x-0 flex justify-around md:justify-between items-center px-6 md:px-8 z-50">
+    <div className="fixed bottom-0 md:top-0 md:bottom-auto w-full max-w-md md:max-w-3xl lg:max-w-5xl h-20 md:h-20 pb-[env(safe-area-inset-bottom,10px)] glass-card rounded-t-3xl md:rounded-none border-b-0 md:border-b md:border-white/10 border-x-0 flex justify-around md:justify-between items-center px-6 md:px-8 z-50">
       
       {/* Desktop Logo */}
       <div className="hidden md:flex items-center gap-3">

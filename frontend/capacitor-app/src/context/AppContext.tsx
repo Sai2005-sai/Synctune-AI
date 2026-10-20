@@ -325,13 +325,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const allLoaded: LoadedTrack[] = await loadTracksMetadata(undefined);
       const assignments = assignTracksToSegments(segments, allLoaded, video.duration);
 
-      // 7. Upload video to the server for cross-device persistence
-      let remoteVideoUrl = video.url;
-      try {
-        remoteVideoUrl = await uploadVideoToServer(video.url, video.name);
-      } catch (err) {
-        console.error('Video upload failed, falling back to local URL:', err);
-      }
+      // 7. Background upload video to the server for cross-device persistence (non-blocking)
+      const remoteVideoUrl = video.url;
+      uploadVideoToServer(video.url, video.name).then(remoteUrl => {
+        if (remoteUrl && remoteUrl !== video.url) {
+          setState(s => s.video ? { ...s, video: { ...s.video, url: remoteUrl } } : s);
+        }
+      }).catch(err => {
+        console.warn('Background video upload ignored:', err);
+      });
 
       // Save project to localStorage & backend for persistence
       try {
