@@ -1,0 +1,31 @@
+# EAS Build Ignore (Git Root)
+# Exclude non-mobile projects and duplicate media
+
+# Exclude backend and web apps
+backend/
+frontend/capacitor-app/
+actions-runner/
+aivideobgm/
+load-test-reports/
+magic pattern/
+temp_docx/
+temp_xlsx/
+tests/
+docs/
+privacy-policy/
+delete-account/
+
+# Exclude archives and packages
+*.zip
+node_modules/
+frontend/expo-app/node_modules/
+frontend/expo-app/.expo/
+frontend/expo-app/test videos/
+frontend/expo-app/android/
+frontend/expo-app/ios/
+
+# Exclude caches
+.git/
+.idea/
+.vscode/
+*.log

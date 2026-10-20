@@ -1,0 +1,27 @@
+# EAS Build Ignore File
+# Exclude heavy folders that EAS will restore or that are not needed in production
+
+# Dependencies (EAS runs npm install on its cloud builder)
+node_modules/
+
+# Local build artifacts and caches
+.expo/
+dist/
+web-build/
+android/
+ios/
+
+# Test data & raw samples
+test videos/
+*.mp4
+
+# Temp & logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+Thumbs.db
+.git/
+.vscode/
+.idea/
