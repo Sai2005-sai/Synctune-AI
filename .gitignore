@@ -50,3 +50,7 @@ tests/selenium/screenshots/
 load-test-reports/
 synctune-mobile-rn/
 
+
+synctune-preview.apk
+*.apk
+
