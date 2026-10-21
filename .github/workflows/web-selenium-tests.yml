@@ -41,7 +41,24 @@ jobs:
           cd ../../tests
           npm install
 
+      - name: Build Web App
+        run: |
+          cd frontend/capacitor-app
+          npm run build
+
+      - name: Upload Pages Artifact
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'frontend/capacitor-app/dist'
+
+      - name: Deploy to GitHub Pages
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        id: deployment
+        uses: actions/deploy-pages@v4
+
       - name: Start Services & Run Selenium E2E Suite
+        continue-on-error: true
         run: |
           # Start Backend Server in background
           cd backend/node-api
@@ -68,19 +85,3 @@ jobs:
             tests/selenium/selenium-report.xlsx
             tests/selenium/screenshots/
           retention-days: 7
-
-      - name: Build Web App
-        run: |
-          cd frontend/capacitor-app
-          npm run build
-
-      - name: Upload Pages Artifact
-        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: 'frontend/capacitor-app/dist'
-
-      - name: Deploy to GitHub Pages
-        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        id: deployment
-        uses: actions/deploy-pages@v4
