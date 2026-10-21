@@ -76,7 +76,7 @@ export default function Profile() {
             <div className="absolute inset-0 rounded-full bg-gradient-accent blur-md opacity-50" />
             <div className="w-24 h-24 rounded-full p-1 bg-gradient-accent relative z-10 flex items-center justify-center overflow-hidden">
                {user?.photo ? (
-                 <img src={user.photo} crossOrigin="anonymous" className="w-full h-full rounded-full border-4 border-dark-bg object-cover" alt="Profile" />
+                 <img src={user.photo} className="w-full h-full rounded-full border-4 border-dark-bg object-cover" alt="Profile" />
                ) : (
                  <div className="w-full h-full bg-dark-bg rounded-full flex items-center justify-center border-4 border-dark-bg">
                     <span className="text-3xl font-display font-bold text-white uppercase">{user?.name?.charAt(0) || 'U'}</span>

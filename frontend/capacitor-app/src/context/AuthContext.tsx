@@ -49,19 +49,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       const updatedUser = { ...user, name, photo: photo || user.photo };
       setUser(updatedUser);
-      localStorage.setItem('synctune_user', JSON.stringify(updatedUser));
+      try {
+        localStorage.setItem('synctune_user', JSON.stringify(updatedUser));
+      } catch (e) {
+        console.warn('Failed to save user to localStorage:', e);
+      }
       
       // Also update in registered users database to keep it in sync
-      const existingUsersStr = localStorage.getItem('synctune_registered_users');
-      if (existingUsersStr) {
-        let existingUsers = JSON.parse(existingUsersStr);
-        existingUsers = existingUsers.map((u: any) => {
-           if (u.email === user.email) {
-               return { ...u, name, photo: photo || user.photo };
-           }
-           return u;
-        });
-        localStorage.setItem('synctune_registered_users', JSON.stringify(existingUsers));
+      try {
+        const existingUsersStr = localStorage.getItem('synctune_registered_users');
+        if (existingUsersStr) {
+          let existingUsers = JSON.parse(existingUsersStr);
+          existingUsers = existingUsers.map((u: any) => {
+             if (u.email === user.email) {
+                 return { ...u, name, photo: photo || user.photo };
+             }
+             return u;
+          });
+          localStorage.setItem('synctune_registered_users', JSON.stringify(existingUsers));
+        }
+      } catch (e) {
+        console.warn('Failed to save registered users to localStorage:', e);
       }
     }
   };

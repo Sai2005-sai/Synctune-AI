@@ -15,17 +15,53 @@ export default function EditProfile() {
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhoto(reader.result as string);
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (!dataUrl) return;
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 320;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          setPhoto(compressed);
+        } else {
+          setPhoto(dataUrl);
+        }
       };
-      reader.readAsDataURL(file);
-    }
+      img.onerror = () => {
+        setPhoto(dataUrl);
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = () => {
-    updateProfile(name, photo);
+    updateProfile(name.trim(), photo);
     navigate(-1);
   };
 
@@ -43,12 +79,13 @@ export default function EditProfile() {
       <div className="px-6 pt-8">
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-4">
-            <div className="w-24 h-24 rounded-full p-1 bg-gradient-accent relative z-10">
-              <img src={photo} crossOrigin="anonymous" className="w-full h-full rounded-full border-4 border-dark-bg object-cover" alt="Avatar" />
+            <div className="w-24 h-24 rounded-full p-1 bg-gradient-accent relative z-10 flex items-center justify-center overflow-hidden">
+              <img src={photo} className="w-full h-full rounded-full border-4 border-dark-bg object-cover" alt="Avatar" />
             </div>
             <button 
+              type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 w-8 h-8 bg-dark-surface rounded-full border-2 border-white/10 flex items-center justify-center z-20 hover:bg-white/20">
+              className="absolute bottom-0 right-0 w-8 h-8 bg-dark-surface rounded-full border-2 border-white/10 flex items-center justify-center z-20 hover:bg-white/20 active:scale-95 transition-transform">
               <Camera size={14} className="text-white" />
             </button>
             <input 
