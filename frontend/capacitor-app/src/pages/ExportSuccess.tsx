@@ -20,6 +20,19 @@ export default function ExportSuccess() {
   const videoUrl = state?.videoUrl;
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const getBlobBase64 = async (url: string): Promise<string> => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const handleShare = async () => {
     if (!videoUrl) {
       alert('Video URL not found.');
@@ -29,9 +42,15 @@ export default function ExportSuccess() {
     try {
       // 1. If running inside our React Native mobile app:
       if ((window as any).ReactNativeWebView) {
+        let base64Data: string | undefined;
+        if (videoUrl.startsWith('blob:') || videoUrl.startsWith('data:')) {
+          base64Data = await getBlobBase64(videoUrl);
+        }
         (window as any).ReactNativeWebView.postMessage(JSON.stringify({
           type: 'SHARE_VIDEO',
-          videoUrl
+          videoUrl: base64Data ? undefined : videoUrl,
+          base64Data,
+          fileName: `synctune_${Date.now()}.mp4`
         }));
         return;
       }
@@ -68,9 +87,15 @@ export default function ExportSuccess() {
     try {
       // 1. If running inside our React Native mobile app:
       if ((window as any).ReactNativeWebView) {
+        let base64Data: string | undefined;
+        if (videoUrl.startsWith('blob:') || videoUrl.startsWith('data:')) {
+          base64Data = await getBlobBase64(videoUrl);
+        }
         (window as any).ReactNativeWebView.postMessage(JSON.stringify({
           type: 'SAVE_TO_DEVICE',
-          videoUrl
+          videoUrl: base64Data ? undefined : videoUrl,
+          base64Data,
+          fileName: `synctune_${Date.now()}.mp4`
         }));
         return;
       }
