@@ -56,8 +56,8 @@ export default function VideoPreview() {
         </div>
       </motion.div>
 
-      <div className="mt-6 space-y-3">
-        <GradientButton onClick={() => navigate('/prompt-input')} className="w-full">
+      <div className="mt-6 mb-8 pb-14 space-y-3">
+        <GradientButton onClick={() => navigate('/prompt-input')} className="w-full shadow-lg">
           Continue →
         </GradientButton>
         <OutlinedButton onClick={() => navigate('/upload')} className="w-full">

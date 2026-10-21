@@ -79,8 +79,8 @@ export default function UploadVideo() {
         </div>
       </motion.div>
 
-      <div className="mt-auto pt-6">
-        <GradientButton onClick={() => inputRef.current?.click()} className="w-full">
+      <div className="mt-auto pt-6 pb-14">
+        <GradientButton onClick={() => inputRef.current?.click()} className="w-full shadow-lg">
           Browse Files
         </GradientButton>
       </div>

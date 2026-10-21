@@ -55,7 +55,7 @@ export default function Register() {
   'bg-status-success'];
 
   return (
-    <MobileLayout hideNav className="flex flex-col px-6 py-8">
+    <MobileLayout hideNav className="flex flex-col px-6 py-8 pb-16">
       <div className="flex flex-col items-center mb-8 mt-4">
         <h1 className="font-display text-3xl font-bold text-white mb-2">
           Create Account

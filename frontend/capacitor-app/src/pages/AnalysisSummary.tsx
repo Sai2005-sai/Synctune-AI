@@ -109,8 +109,8 @@ export default function AnalysisSummary() {
         </GlassCard>
       </motion.div>
 
-      <div className="mt-8 space-y-3">
-        <GradientButton onClick={() => navigate('/recommended-tracks')} className="w-full">
+      <div className="mt-8 mb-8 pb-14 space-y-3">
+        <GradientButton onClick={() => navigate('/recommended-tracks')} className="w-full shadow-lg">
           Find Music
         </GradientButton>
         <OutlinedButton onClick={() => navigate('/detailed-analysis')} className="w-full">

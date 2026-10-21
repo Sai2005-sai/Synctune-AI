@@ -32,14 +32,24 @@ export default function SignIn() {
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: email.trim(), password }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       
       const data = await response.json();
       
@@ -51,15 +61,32 @@ export default function SignIn() {
         } else {
           alert(data.error || 'Login failed');
         }
+        setIsLoggingIn(false);
         return;
       }
       
       localStorage.setItem('synctune_token', data.token);
       login(data.user.email, data.user.name, data.user.photo, data.user.id);
       navigate('/home');
-    } catch (err) {
-      console.error(err);
-      alert('Network error - Is the backend running?');
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      console.warn('Backend login network issue, checking local storage:', err);
+      
+      // Fast fallback: if backend is unreachable or timed out, check locally registered user
+      const registeredStr = localStorage.getItem('synctune_registered_users');
+      const registered = registeredStr ? JSON.parse(registeredStr) : [];
+      const localUser = registered.find((u: any) => u.email?.toLowerCase() === email.trim().toLowerCase());
+
+      if (localUser && localUser.password === password) {
+        login(localUser.email, localUser.name, localUser.photo, localUser.id || Date.now());
+        navigate('/home');
+      } else if (err.name === 'AbortError') {
+        alert('Server connection timed out. Please try again or check your internet connection.');
+      } else {
+        alert('Unable to reach server. Please check your network connection.');
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -202,7 +229,7 @@ export default function SignIn() {
   };
 
   return (
-    <MobileLayout hideNav className="flex flex-col px-6 py-12 relative">
+    <MobileLayout hideNav className="flex flex-col px-6 py-8 pb-16 relative">
       <div className="flex flex-col items-center mb-10 mt-8">
         <div className="w-16 h-16 bg-dark-surface rounded-2xl border border-white/10 flex items-center justify-center shadow-lg mb-6">
           <div className="w-8 h-8 rounded-full bg-gradient-accent flex items-center justify-center">
@@ -278,8 +305,8 @@ export default function SignIn() {
           </button>
         </div>
 
-        <GradientButton type="submit" className="w-full mt-2">
-          Sign In
+        <GradientButton type="submit" className="w-full mt-2" disabled={isLoggingIn}>
+          {isLoggingIn ? 'Signing In...' : 'Sign In'}
         </GradientButton>
       </form>
 
