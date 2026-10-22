@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aivideobgm.app",
+      "bundleIdentifier": "com.simats.synctuneai",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select videos for BGM matching.",
         "NSPhotoLibraryAddUsageDescription": "This app saves the exported video with background music to your photo library.",
@@ -21,7 +21,7 @@
       }
     },
     "android": {
-      "package": "com.aivideobgm.app",
+      "package": "com.simats.synctuneai",
       "permissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_VIDEO",
