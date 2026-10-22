@@ -80,78 +80,103 @@ export const OutlinedButton = ({
 export const BottomNav = () => {
   const location = useLocation();
   const navItems = [
-  {
-    icon: Home,
-    label: 'Home',
-    path: '/'
-  },
-  {
-    icon: Folder,
-    label: 'Projects',
-    path: '/projects'
-  },
-  {
-    icon: User,
-    label: 'Profile',
-    path: '/profile'
-  }];
+    {
+      icon: Home,
+      label: 'Home',
+      path: '/'
+    },
+    {
+      icon: Folder,
+      label: 'Projects',
+      path: '/projects'
+    },
+    {
+      icon: Plus,
+      label: 'Create',
+      path: '/upload',
+      isCreate: true
+    },
+    {
+      icon: User,
+      label: 'Profile',
+      path: '/profile'
+    }
+  ];
 
   return (
-    <div className="fixed bottom-0 md:top-0 md:bottom-auto w-full max-w-md md:max-w-3xl lg:max-w-5xl h-20 md:h-20 pb-[env(safe-area-inset-bottom,10px)] glass-card rounded-t-3xl md:rounded-none border-b-0 md:border-b md:border-white/10 border-x-0 flex justify-around md:justify-between items-center px-6 md:px-8 z-50">
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md md:max-w-3xl lg:max-w-5xl h-20 pb-[env(safe-area-inset-bottom,10px)] glass-card rounded-t-3xl md:rounded-none border-b-0 md:border-b md:border-white/10 border-x-0 z-50">
       
-      {/* Desktop Logo */}
-      <div className="hidden md:flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center shadow-lg shadow-accent-purple/20">
-          <Play size={20} className="text-white ml-1" fill="currentColor" />
-        </div>
-        <span className="font-display font-bold text-xl text-white tracking-wide">SyncTune</span>
-      </div>
-
-      <div className="flex justify-around md:justify-end items-center w-full md:w-auto md:gap-8">
-        {navItems.map((item, index) => {
+      {/* Mobile Bottom Navigation (4 equal columns, perfectly aligned) */}
+      <div className="grid grid-cols-4 w-full h-full items-center md:hidden px-2">
+        {navItems.map((item) => {
           const isActive = location.pathname === item.path;
-          if (index === 1) {
-            return (
-              <Fragment key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`flex flex-col md:flex-row items-center gap-1 md:gap-2 ${isActive ? 'text-accent-cyan' : 'text-text-secondary hover:text-white transition-colors'}`}>
-                  
-                  <item.icon
-                    size={24}
-                    className={isActive ? 'text-accent-cyan md:w-5 md:h-5' : 'md:w-5 md:h-5'} />
-                  
-                  <span className="text-[10px] md:text-sm font-medium">{item.label}</span>
-                </Link>
 
-                {/* Floating FAB on Mobile / Flat Button on Desktop */}
-                <div className="relative -top-8 md:top-0 md:ml-4">
-                  <Link to="/upload">
-                    <div className="w-14 h-14 md:w-auto md:h-10 md:px-5 rounded-full bg-gradient-accent glow-shadow flex items-center justify-center text-white hover:scale-105 transition-transform md:shadow-none md:rounded-xl">
-                      <Plus size={28} className="md:w-5 md:h-5" />
-                      <span className="hidden md:block ml-2 text-sm font-bold">New Project</span>
-                    </div>
-                  </Link>
+          if (item.isCreate) {
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className="flex flex-col items-center justify-center gap-1 group py-1"
+              >
+                <div className={`w-10 h-7 rounded-full bg-gradient-accent glow-shadow flex items-center justify-center text-white group-active:scale-95 transition-transform ${isActive ? 'ring-2 ring-accent-cyan' : ''}`}>
+                  <Plus size={18} strokeWidth={2.5} />
                 </div>
-              </Fragment>);
+                <span className={`text-[10px] font-medium leading-none ${isActive ? 'text-accent-cyan' : 'text-text-secondary group-hover:text-white transition-colors'}`}>
+                  {item.label}
+                </span>
+              </Link>
+            );
           }
+
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col md:flex-row items-center gap-1 md:gap-2 ${isActive ? 'text-accent-cyan' : 'text-text-secondary hover:text-white transition-colors'}`}>
-              
+              className={`flex flex-col items-center justify-center gap-1 py-1 ${isActive ? 'text-accent-cyan' : 'text-text-secondary hover:text-white transition-colors'}`}
+            >
               <item.icon
-                size={24}
-                className={isActive ? 'text-accent-cyan md:w-5 md:h-5' : 'md:w-5 md:h-5'} />
-              
-              <span className="text-[10px] md:text-sm font-medium">{item.label}</span>
-            </Link>);
-
+                size={22}
+                className={isActive ? 'text-accent-cyan' : ''}
+              />
+              <span className="text-[10px] font-medium leading-none">{item.label}</span>
+            </Link>
+          );
         })}
       </div>
-    </div>);
 
+      {/* Desktop Top/Header Bar */}
+      <div className="hidden md:flex justify-between items-center w-full h-full px-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center shadow-lg shadow-accent-purple/20">
+            <Play size={20} className="text-white ml-1" fill="currentColor" />
+          </div>
+          <span className="font-display font-bold text-xl text-white tracking-wide">SyncTune</span>
+        </div>
+
+        <div className="flex items-center gap-8">
+          {navItems.filter(i => !i.isCreate).map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-2 ${isActive ? 'text-accent-cyan' : 'text-text-secondary hover:text-white transition-colors'}`}
+              >
+                <item.icon size={20} className={isActive ? 'text-accent-cyan' : ''} />
+                <span className="text-sm font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+          <Link to="/upload">
+            <div className="h-10 px-5 rounded-xl bg-gradient-accent flex items-center justify-center text-white hover:scale-105 transition-transform">
+              <Plus size={20} />
+              <span className="ml-2 text-sm font-bold">New Project</span>
+            </div>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 };
 export const MoodChip = ({ mood }: {mood: string;}) => {
   const getColors = () => {
